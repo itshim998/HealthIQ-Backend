@@ -260,82 +260,10 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: err.message || "Internal server error." });
 });
 
-// ---- Seed demo events ----
-async function seedDemoEvents(): Promise<void> {
-  const DEMO_USER: UserId = "demo-user";
-  const now = Date.now();
-  const DAY = 24 * 60 * 60 * 1000;
-
-  const demoEvents: AnyHealthEvent[] = [
-    {
-      id: "demo-sym-1",
-      eventType: HealthEventType.Symptom,
-      timestamp: { absolute: new Date(now - 2 * DAY).toISOString() },
-      source: EventSource.User,
-      confidence: "medium",
-      visibilityScope: VisibilityScope.UserOnly,
-      description: "Mild headache after waking up",
-      intensity: "Moderate",
-    } as SymptomEvent,
-    {
-      id: "demo-sym-2",
-      eventType: HealthEventType.Symptom,
-      timestamp: { absolute: new Date(now - 4 * DAY).toISOString() },
-      source: EventSource.User,
-      confidence: "medium",
-      visibilityScope: VisibilityScope.UserOnly,
-      description: "Feeling fatigued in the afternoon",
-      intensity: "High",
-      userReportedContext: "poor sleep; high stress",
-    } as SymptomEvent,
-    {
-      id: "demo-med-1",
-      eventType: HealthEventType.Medication,
-      timestamp: { absolute: new Date(now - 1 * DAY).toISOString() },
-      source: EventSource.User,
-      confidence: "high",
-      visibilityScope: VisibilityScope.UserOnly,
-      name: "Daily Vitamins",
-      dosage: "1 tablet",
-      intendedSchedule: "once daily",
-      adherenceOutcome: "taken",
-    } as MedicationEvent,
-    {
-      id: "demo-life-1",
-      eventType: HealthEventType.Lifestyle,
-      timestamp: { absolute: new Date(now - 3 * DAY).toISOString() },
-      source: EventSource.User,
-      confidence: "low",
-      visibilityScope: VisibilityScope.UserOnly,
-      sleep: "~5.5h",
-      stress: "high",
-      activity: "30 min morning walk",
-      food: "irregular meals",
-    } as LifestyleEvent,
-    {
-      id: "demo-clin-1",
-      eventType: HealthEventType.Clinical,
-      timestamp: { absolute: new Date(now - 10 * DAY).toISOString() },
-      source: EventSource.Doctor,
-      confidence: "high",
-      visibilityScope: VisibilityScope.DoctorShareable,
-      doctorVisit: "Routine check-up",
-    } as ClinicalEvent,
-  ];
-
-  try {
-    await repo.appendEvents(DEMO_USER, demoEvents);
-    console.log(`[HealthIQ] Seeded ${demoEvents.length} demo events for user "demo-user".`);
-  } catch {
-    console.log("[HealthIQ] Demo seed skipped (events may already exist).");
-  }
-}
-
 // ---- Start server ----
-seedDemoEvents().then(() => {
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[HealthIQ] Server running on port ${PORT}`);
-    console.log(`[HealthIQ] API health check: http://0.0.0.0:${PORT}/api/health`);
-    console.log(`[HealthIQ] Environment: ${process.env.NODE_ENV || "development"}`);
-  });
+// No demo seed — timeline starts empty. Users add events via the frontend.
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`[HealthIQ] Server running on port ${PORT}`);
+  console.log(`[HealthIQ] API health check: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`[HealthIQ] Environment: ${process.env.NODE_ENV || "development"}`);
 });
