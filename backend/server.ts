@@ -40,15 +40,37 @@ const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
 // ---- CORS ----
-const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",").map(s => s.trim())
-  : ["*"];
+const DEFAULT_ORIGINS = [
+  "https://healthiq.sentiqlabs.com",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
+
+const ALLOWED_ORIGINS: string[] = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map(s => s.trim()).filter(Boolean)
+  : DEFAULT_ORIGINS;
+
+console.log("[HealthIQ] CORS allowed origins:", ALLOWED_ORIGINS);
 
 app.use(cors({
-  origin: ALLOWED_ORIGINS.includes("*") ? "*" : ALLOWED_ORIGINS,
+  origin(requestOrigin: string | undefined, callback: (err: Error | null, allow?: boolean | string) => void) {
+    // Allow server-to-server / curl / health-pings (no Origin header)
+    if (!requestOrigin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(requestOrigin)) {
+      return callback(null, requestOrigin);
+    }
+    console.warn(`[CORS] Blocked request from origin: ${requestOrigin}`);
+    callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+  },
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
+  credentials: false,
 }));
+
+// Explicit preflight handling for all routes
+app.options("*", cors());
 
 app.use(express.json({ limit: "1mb" }));
 
@@ -311,8 +333,9 @@ async function seedDemoEvents(): Promise<void> {
 
 // ---- Start server ----
 seedDemoEvents().then(() => {
-  app.listen(PORT, () => {
-    console.log(`[HealthIQ] Server running on http://localhost:${PORT}`);
-    console.log(`[HealthIQ] API health check: http://localhost:${PORT}/api/health`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[HealthIQ] Server running on port ${PORT}`);
+    console.log(`[HealthIQ] API health check: http://0.0.0.0:${PORT}/api/health`);
+    console.log(`[HealthIQ] Environment: ${process.env.NODE_ENV || "development"}`);
   });
 });
