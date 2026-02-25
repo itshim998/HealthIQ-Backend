@@ -424,7 +424,9 @@ export async function callLLMAdapter(call: LLMAdapterCall): Promise<string> {
   return await new Promise<string>((resolve, reject) => {
     let settled = false;
 
-    const child = spawn("python", ["-c", pythonCode], {
+    // Use python3 on Linux (Render) with python as fallback (Windows).
+    const pythonBin = process.platform === "win32" ? "python" : "python3";
+    const child = spawn(pythonBin, ["-c", pythonCode], {
       cwd: PROJECT_ROOT,
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,

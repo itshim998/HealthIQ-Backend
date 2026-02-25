@@ -2,13 +2,11 @@ services:
   - type: web
     name: healthiq-backend
     runtime: node
-    buildCommand: pip install -r requirements.txt && npm install && npm run build
+    buildCommand: pip3 install --user -r requirements.txt && npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
         value: "20"
-      - key: PYTHON_VERSION
-        value: "3"
       - key: GEMINI_API_KEY
         sync: false
       - key: GROQ_API_KEY
