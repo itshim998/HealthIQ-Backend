@@ -69,7 +69,8 @@ function sanitizeAnyEvent(event: AnyHealthEvent): Record<string, unknown> {
 
 // This is NOT a DRAFT AI output — it is conversational.
 // No evidence discipline required. No review-first policy.
-// Safety: NO diagnosis, NO treatment advice, NO urgency.
+// Boundary: Allows general health education and preventive guidance.
+// Hard limits: No diagnosis, no prescriptions, no dosage, no emergency directives.
 export async function handleHealthChat(args: {
   readonly userMessage: string;
   readonly recentEvents: readonly AnyHealthEvent[];
@@ -105,8 +106,14 @@ export async function handleHealthChat(args: {
 
   if (typeof reply !== "string" || !reply.trim()) throw new Error("LLM output must contain a non-empty reply.");
 
+  const DEFAULT_HEALTH_DISCLAIMER =
+    "While this information may help you understand your symptoms, it is not a medical diagnosis. " +
+    "For personalized medical advice, please consult a qualified healthcare professional.";
+
   return {
     reply: reply.trim(),
-    disclaimer: typeof disclaimer === "string" ? disclaimer.trim() : "HealthIQ is not a medical authority. Consult a healthcare professional for medical advice.",
+    disclaimer: typeof disclaimer === "string" && disclaimer.trim()
+      ? disclaimer.trim()
+      : DEFAULT_HEALTH_DISCLAIMER,
   };
 }
