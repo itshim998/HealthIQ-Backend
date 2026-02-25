@@ -2,7 +2,7 @@ services:
   - type: web
     name: healthiq-backend
     runtime: node
-    buildCommand: pip3 install --user -r requirements.txt && npm install && npm run build
+    buildCommand: pip3 install -r requirements.txt && npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
