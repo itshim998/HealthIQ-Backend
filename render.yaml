@@ -9,7 +9,9 @@ services:
         value: "20"
       - key: GEMINI_API_KEY
         sync: false
-      - key: GROQ_API_KEY
+      - key: GEMINI_API_KEY_2
+        sync: false
+      - key: GEMINI_API_KEY_3
         sync: false
       - key: CORS_ORIGINS
         sync: false

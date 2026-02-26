@@ -1,18 +1,15 @@
 # llm_adapter.py
 """
-SentIQ — Unified LLM Gateway (Production)
+HealthIQ — Unified LLM Gateway (Production)
 
-Supports:
-- RecruiterIQ (evaluation, scoring)
-- Resume & Portfolio Builder (generation)
-
-Providers:
-- Primary: Google Gemini
-- Failover: Groq (Llama 3)
+Provider:
+- Google Gemini (3-key rotation for resilience)
+  Key 1 (primary) → Key 2 (fallback) → Key 3 (fallback)
 
 Design goals:
 - Strict JSON where required
 - Task-aware routing
+- Automatic key rotation on failure
 - Backward compatibility
 """
 
@@ -29,11 +26,6 @@ from typing import Optional
 # ------------------------------
 # Optional SDK imports
 # ------------------------------
-try:
-    import groq
-except Exception:
-    groq = None
-
 GENAI_MODULE = None
 GENAI_CLIENT_FACTORY = None
 
@@ -54,11 +46,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 from dotenv import load_dotenv
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_API_KEYS = [
+    os.getenv("GEMINI_API_KEY", ""),
+    os.getenv("GEMINI_API_KEY_2", ""),
+    os.getenv("GEMINI_API_KEY_3", ""),
+]
+# Filter out empty keys
+GEMINI_API_KEYS = [k for k in GEMINI_API_KEYS if k]
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
 _CACHE_FILE_ENV = os.getenv("SENTIQ_CACHE_FILE", "sentiq_cache.db")
 CACHE_FILE = _CACHE_FILE_ENV if os.path.isabs(_CACHE_FILE_ENV) else os.path.join(BASE_DIR, _CACHE_FILE_ENV)
@@ -135,45 +130,24 @@ def simulated_response(prompt: str, task: str) -> str:
     return "SIMULATED RESPONSE"
 
 # ------------------------------
-# Gemini invocation
+# Gemini invocation (supports key rotation)
 # ------------------------------
-def _call_gemini(prompt: str, model: Optional[str] = None) -> str:
+def _call_gemini(prompt: str, api_key: str, model: Optional[str] = None) -> str:
+    """Call Gemini with a specific API key."""
     if not GENAI_MODULE:
         raise RuntimeError("Gemini SDK not installed")
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY missing")
+    if not api_key:
+        raise RuntimeError("Gemini API key is empty")
 
     if not bucket.consume():
         raise RuntimeError("Rate limit exceeded")
 
     if hasattr(GENAI_MODULE, "configure"):
-        GENAI_MODULE.configure(api_key=GEMINI_API_KEY)
+        GENAI_MODULE.configure(api_key=api_key)
 
     model_obj = GENAI_MODULE.GenerativeModel(model or GEMINI_MODEL)
     resp = model_obj.generate_content(prompt)
     return getattr(resp, "text", str(resp))
-
-# ------------------------------
-# Groq invocation (JSON-safe)
-# ------------------------------
-def _call_groq(prompt: str, model: Optional[str] = None) -> str:
-    if not groq or not GROQ_API_KEY:
-        raise RuntimeError("Groq not configured")
-
-    if not bucket.consume():
-        raise RuntimeError("Rate limit exceeded")
-
-    client = groq.Groq(api_key=GROQ_API_KEY)
-    completion = client.chat.completions.create(
-        model=model or GROQ_MODEL,
-        messages=[
-            {"role": "system", "content": "You must respond with valid JSON only."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3,
-        response_format={"type": "json_object"}
-    )
-    return completion.choices[0].message.content.strip()
 
 # ------------------------------
 # Router
@@ -190,7 +164,11 @@ def call_llm_router(
     if use_simulation:
         return simulated_response(prompt, task)
 
-    model = model_override or (GEMINI_MODEL if prefer != "groq" else GROQ_MODEL)
+    if not GEMINI_API_KEYS:
+        logger.error("No Gemini API keys configured")
+        return json.dumps({"error": "no_api_keys", "detail": "No GEMINI_API_KEY values found in environment"})
+
+    model = model_override or GEMINI_MODEL
     key = _cache_key(prompt, task, model, user_id or "")
 
     # Cache
@@ -208,25 +186,23 @@ def call_llm_router(
             "No markdown. No explanations.\n\n" + prompt
         )
 
-    providers = ["gemini", "groq"] if prefer != "groq" else ["groq", "gemini"]
+    # Rotate through all available Gemini API keys
     last_error = None
 
-    for p in providers:
+    for idx, api_key in enumerate(GEMINI_API_KEYS, 1):
         try:
-            if p == "gemini":
-                result = _call_gemini(prompt, model_override)
-            else:
-                result = _call_groq(prompt, model_override)
+            result = _call_gemini(prompt, api_key, model_override)
 
             with shelve.open(CACHE_FILE) as db:
                 db[key] = result
+            logger.info("Gemini key #%d succeeded for task=%s", idx, task)
             return result
 
         except Exception as e:
             last_error = e
-            logger.warning("Provider %s failed: %s", p, e)
+            logger.warning("Gemini key #%d failed: %s", idx, e)
 
-    logger.error("All providers failed: %s", last_error)
+    logger.error("All %d Gemini keys failed: %s", len(GEMINI_API_KEYS), last_error)
     return json.dumps({"error": "all_providers_failed", "detail": str(last_error)})
 
 # ------------------------------

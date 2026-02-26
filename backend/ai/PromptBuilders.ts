@@ -89,7 +89,6 @@ export interface LLMAdapterCall {
   readonly prompt: string;
 
   // Optional adapter controls (only set with justification).
-  readonly prefer?: "groq";
   readonly model_override?: string;
   readonly use_simulation?: boolean;
 }
@@ -445,7 +444,6 @@ export async function callLLMAdapter(call: LLMAdapterCall): Promise<string> {
     prompt: call.prompt,
     task: call.task,
     use_simulation: call.use_simulation ?? false,
-    prefer: call.prefer,
     model_override: call.model_override,
   };
 
