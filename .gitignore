@@ -1,5 +1,27 @@
-﻿node_modules/
-dist/
+# Dependencies
+node_modules/
+__pycache__/
+
+# Environment
 .env
-*.js.map
-*.d.ts
+
+# Cache / DB
+sentiq_cache.db.*
+*.db.bak
+*.db.dir
+*.db.dat
+
+# Build output
+dist/
+
+# Temp files (Claude artifacts)
+tmpclaude-*
+nul
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

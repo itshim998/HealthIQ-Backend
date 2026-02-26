@@ -1,0 +1,4235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>HealthIQ | SentIQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- chat-animations.css (inlined) -->
+  <style>
+/* ==========================================================
+   HEALTHIQ — CHAT ANIMATIONS & STYLING
+   Premium liquid-glass chat UI.
+   No frameworks. CSS transitions + keyframes only.
+   ========================================================== */
+
+/* ---- Chat Container (Liquid Glass) ---- */
+.chat-pill {
+  --chat-radius: 24px;
+  --chat-glow: rgba(139, 92, 246, 0);
+  transition: --chat-glow 0.6s ease;
+}
+
+.chat-pill .lp-container {
+  width: 100%;
+  max-width: 100%;
+}
+
+.chat-pill .lp-viewport {
+  height: calc(100vh - var(--nav-height, 64px) - 160px);
+  min-height: 420px;
+  max-height: 78vh;
+  border-radius: var(--chat-radius);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 0 0 0 var(--chat-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition:
+    border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Activated state — subtle glow on first interaction */
+.chat-pill.chat-active .lp-viewport {
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 0 40px -10px rgba(139, 92, 246, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Chat History ---- */
+.chat-history {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px 24px 16px;
+  overscroll-behavior: contain;
+}
+
+.chat-history::-webkit-scrollbar { width: 3px; }
+.chat-history::-webkit-scrollbar-track { background: transparent; }
+.chat-history::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+.chat-history::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ---- Empty State ---- */
+.chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  min-height: 280px;
+  animation: emptyFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chat-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05));
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.chat-empty h2 {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.chat-empty p {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  max-width: 360px;
+  margin: 0 0 6px;
+}
+
+.chat-empty .chat-empty-hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 16px;
+}
+
+@keyframes emptyFadeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---- Messages ---- */
+.chat-msg {
+  margin-bottom: 18px;
+  max-width: 82%;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.chat-msg.user {
+  margin-left: auto;
+  text-align: right;
+  animation: msgSlideInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.chat-msg.ai {
+  margin-right: auto;
+  animation: msgSlideInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Restored messages (loaded from localStorage) — no animation */
+.chat-msg.restored {
+  opacity: 1;
+  animation: none;
+}
+
+.chat-msg .chat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.35);
+  transition: color 0.2s ease;
+}
+
+.chat-msg.user .chat-label {
+  color: rgba(139, 92, 246, 0.55);
+}
+
+.chat-msg .chat-bubble {
+  display: inline-block;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+/* User bubble */
+.chat-msg.user .chat-bubble {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(124, 58, 237, 0.15) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  color: rgba(255, 255, 255, 0.95);
+  border-bottom-right-radius: 6px;
+}
+
+/* AI bubble */
+.chat-msg.ai .chat-bubble {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+  border-bottom-left-radius: 6px;
+}
+
+/* Error bubble */
+.chat-msg.ai .chat-bubble.error-bubble {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+/* Demo bubble */
+.chat-msg.ai .chat-bubble.demo-bubble {
+  background: rgba(232, 185, 44, 0.06);
+  border-color: rgba(232, 185, 44, 0.15);
+}
+
+/* Inline disclaimer */
+.chat-disclaimer-inline {
+  display: block;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.32);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ---- Markdown inside AI bubbles ---- */
+.chat-msg.ai .chat-bubble p {
+  margin: 0 0 14px 0;
+  line-height: 1.65;
+}
+.chat-msg.ai .chat-bubble p:last-child {
+  margin-bottom: 0;
+}
+.chat-msg.ai .chat-bubble strong {
+  color: rgba(255, 255, 255, 0.97);
+  font-weight: 600;
+}
+.chat-msg.ai .chat-bubble em {
+  font-style: italic;
+  color: rgba(200, 180, 255, 0.9);
+}
+.chat-msg.ai .chat-bubble h3,
+.chat-msg.ai .chat-bubble h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 16px 0 8px 0;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.4;
+}
+.chat-msg.ai .chat-bubble h3:first-child,
+.chat-msg.ai .chat-bubble h4:first-child {
+  margin-top: 0;
+}
+.chat-msg.ai .chat-bubble ul,
+.chat-msg.ai .chat-bubble ol {
+  margin: 8px 0 16px 0;
+  padding-left: 22px;
+  list-style-position: outside;
+}
+.chat-msg.ai .chat-bubble ul {
+  list-style-type: disc;
+}
+.chat-msg.ai .chat-bubble ol {
+  list-style-type: decimal;
+}
+.chat-msg.ai .chat-bubble li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  padding-left: 4px;
+}
+.chat-msg.ai .chat-bubble li:last-child {
+  margin-bottom: 0;
+}
+.chat-msg.ai .chat-bubble code {
+  font-family: 'Courier New', Courier, monospace;
+  background: rgba(139, 92, 246, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.84em;
+}
+.chat-msg.ai .chat-bubble pre {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 10px 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.chat-msg.ai .chat-bubble pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+/* Prevent broken inline numbering artifacts */
+.chat-msg.ai .chat-bubble ol li::marker {
+  font-weight: 600;
+  color: rgba(139, 92, 246, 0.7);
+}
+
+/* ---- Message slide-in keyframes ---- */
+@keyframes msgSlideInRight {
+  from { opacity: 0; transform: translateX(20px) translateY(4px); }
+  to   { opacity: 1; transform: translateX(0) translateY(0); }
+}
+
+@keyframes msgSlideInLeft {
+  from { opacity: 0; transform: translateX(-20px) translateY(4px); }
+  to   { opacity: 1; transform: translateX(0) translateY(0); }
+}
+
+/* ---- Typing Indicator ---- */
+.chat-typing-wrap {
+  margin-bottom: 18px;
+  max-width: 82%;
+  margin-right: auto;
+  animation: msgSlideInLeft 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.chat-typing-wrap .chat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.chat-typing-bubble {
+  display: inline-flex;
+  gap: 5px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border-bottom-left-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  align-items: center;
+}
+
+.chat-typing-bubble span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.5);
+  animation: typingPulse 1.4s ease-in-out infinite;
+}
+
+.chat-typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingPulse {
+  0%, 80%, 100% {
+    transform: scale(0.7);
+    opacity: 0.3;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---- Input Bar ---- */
+.chat-input-bar {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  align-items: flex-end;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.chat-input-bar.input-focused {
+  background: rgba(0, 0, 0, 0.25);
+  border-top-color: rgba(139, 92, 246, 0.12);
+}
+
+.chat-input-bar textarea {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  outline: none;
+  resize: none;
+  max-height: 130px;
+  overflow-y: auto;
+  transition:
+    border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.35s ease;
+}
+
+.chat-input-bar textarea:focus {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chat-input-bar textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  transition: color 0.2s ease;
+}
+
+.chat-input-bar textarea:focus::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* Send button */
+.chat-send-btn {
+  position: relative;
+  padding: 10px 22px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease;
+}
+
+.chat-send-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3), transparent 70%);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.chat-send-btn:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+}
+
+.chat-send-btn:active:not(:disabled)::after {
+  opacity: 1;
+  transform: scale(2.5);
+  transition: opacity 0.1s, transform 0.3s;
+}
+
+.chat-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---- Clear Chat Button ---- */
+.chat-clear-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.78rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.chat-clear-btn:hover {
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ---- Confirmation Modal ---- */
+.chat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.25s ease;
+}
+
+.chat-modal {
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 28px 32px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  animation: modalScaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-modal h3 {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-modal p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.chat-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.chat-modal-actions button {
+  padding: 9px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.chat-modal-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.chat-modal-cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chat-modal-confirm {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+
+.chat-modal-confirm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---- Demo Notice ---- */
+.chat-demo-notice {
+  display: none;
+  text-align: center;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(232, 185, 44, 0.08);
+  border: 1px solid rgba(232, 185, 44, 0.18);
+  font-size: 0.78rem;
+  color: #e8b92c;
+  animation: emptyFadeIn 0.4s ease;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 520px) {
+  .chat-history { padding: 18px 14px 10px; }
+  .chat-input-bar { padding: 10px 12px; gap: 8px; position: sticky; bottom: 0; z-index: 10; }
+  .chat-input-bar textarea { font-size: 16px; padding: 9px 12px; border-radius: 12px; }
+  .chat-send-btn { padding: 9px 16px; font-size: 0.84rem; border-radius: 12px; }
+  .chat-msg { max-width: 90%; }
+  .chat-empty { padding: 32px 16px; min-height: 220px; }
+  .chat-pill .lp-viewport {
+    height: calc(100vh - var(--nav-height, 64px) - 180px);
+    height: calc(100dvh - var(--nav-height, 64px) - 180px);
+    max-height: none;
+    min-height: 300px;
+  }
+}
+
+/* ---- Degradation ---- */
+@supports not (backdrop-filter: blur(1px)) {
+  .chat-pill .lp-viewport {
+    background: rgba(22, 22, 28, 0.96);
+  }
+}
+  </style>
+
+  <!-- liquid-pill.css (inlined) -->
+  <style>
+/*
+  LIQUID PILL COMPONENT (SCOPED)
+  ==============================
+  All styles are scoped to the .liquid-pill class.
+*/
+
+/* ===== LIQUID PILL SCOPED VARIABLES ===== */
+.liquid-pill {
+  --lp-scale: 0.98;
+  --lp-radius: 34px;
+  --lp-h: 26vh;
+  --lp-track-index: 0;
+  --lp-track-nudge: 0px;
+  --lp-glass-bg: rgba(255, 255, 255, 0.06);
+  --lp-glass-border: rgba(255, 255, 255, 0.14);
+  --lp-glass-shadow: rgba(0, 0, 0, 0.55);
+  --lp-text: rgba(255, 255, 255, 0.92);
+  --lp-muted: rgba(255, 255, 255, 0.72);
+}
+
+.liquid-pill .lp-container {
+  width: 100%;
+  max-width: 100%;
+  transform: scale(var(--lp-scale));
+  transform-origin: center;
+  will-change: transform;
+}
+
+.liquid-pill .lp-viewport {
+  height: var(--lp-h);
+  min-height: 280px;
+  border-radius: var(--lp-radius);
+  background: var(--lp-glass-bg);
+  border: 1px solid var(--lp-glass-border);
+  box-shadow: 0 22px 60px var(--lp-glass-shadow);
+  backdrop-filter: blur(6px) saturate(110%);
+  -webkit-backdrop-filter: blur(6px) saturate(110%);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.liquid-pill .lp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  width: 100%;
+}
+
+.liquid-pill .lp-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.liquid-pill .lp-track {
+  height: 300%;
+  width: 100%;
+  transform: translateY(calc(var(--lp-track-index) * -100% + var(--lp-track-nudge)));
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.liquid-pill .lp-state {
+  height: calc(100% / 3);
+  padding: 28px 26px 18px;
+  overflow: hidden;
+}
+
+.liquid-pill[data-expanded="true"][data-internal-scroll="true"] .lp-state[data-active="true"] {
+  overflow: auto;
+}
+
+.liquid-pill .lp-state header h2 {
+  margin: 0 0 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  font-size: 1.25rem;
+  color: var(--lp-text);
+}
+
+.liquid-pill .lp-state p {
+  margin: 0 0 12px;
+  color: var(--lp-muted);
+  line-height: 1.55;
+}
+
+.liquid-pill .lp-state ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.liquid-pill .lp-state ul li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.liquid-pill .lp-state ul li:last-child {
+  border-bottom: none;
+}
+
+.liquid-pill .lp-state ul li strong {
+  color: var(--lp-text);
+}
+
+.liquid-pill .lp-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 0 26px 18px;
+}
+
+.liquid-pill .lp-micro-pill {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+
+.liquid-pill .lp-micro-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.liquid-pill .lp-micro-pill:active {
+  transform: scale(0.97);
+}
+
+.liquid-pill .lp-micro-pill[aria-pressed="true"] {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.liquid-pill .lp-chat-input {
+  display: flex;
+  gap: 12px;
+  padding: 0 26px 18px;
+}
+
+.liquid-pill .lp-chat-input input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.liquid-pill .lp-chat-input input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+.liquid-pill .lp-chat-input input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.liquid-pill .lp-chat-input button {
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.liquid-pill .lp-chat-input button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+.liquid-pill .lp-chat-input button:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 520px) {
+  .liquid-pill .lp-state {
+    padding: 22px 18px 16px;
+  }
+  .liquid-pill .lp-footer {
+    padding: 0 18px 14px;
+    flex-wrap: wrap;
+  }
+  .liquid-pill .lp-chat-input {
+    padding: 0 18px 14px;
+    flex-direction: column;
+  }
+  .liquid-pill .lp-chat-input button {
+    width: 100%;
+  }
+}
+  </style>
+
+  <style>
+    /* ===== CSS VARIABLES (RecruiterIQ Style - Preserved) ===== */
+    :root {
+      --purple-400: #a78bfa;
+      --purple-500: #8b5cf6;
+      --purple-600: #7c3aed;
+      --purple-700: #6d28d9;
+      --blue-600: #2563eb;
+      --green-500: #10b981;
+      --green-600: #059669;
+      --red-400: #f87171;
+      --red-500: #ef4444;
+      --yellow-500: #eab308;
+      --neutral-300: #d4d4d4;
+      --neutral-400: #a3a3a3;
+      --neutral-700: #404040;
+      --neutral-800: #262626;
+      --neutral-900: #171717;
+      --nav-height: 64px;
+      --radius: 16px;
+      --transition: 0.25s ease;
+    }
+
+    /* ===== RESET & BASE ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== MAIN SECTION ===== */
+    .main-section {
+      position: relative;
+      min-height: 100vh;
+      padding: 0 24px;
+      padding-top: var(--nav-height);
+      overflow: hidden;
+    }
+
+    /* ===== BACKGROUND GRADIENTS ===== */
+    .background-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .radial-gradient {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(139, 92, 246, 0.1), transparent 70%);
+    }
+
+    .floating-gradient {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(48px);
+    }
+
+    .gradient-1 {
+      top: 25%;
+      left: 33%;
+      width: 384px;
+      height: 384px;
+      background: linear-gradient(to bottom right, rgba(124, 58, 237, 0.2), transparent);
+      animation: float1 8s ease-in-out infinite;
+    }
+
+    .gradient-2 {
+      bottom: 25%;
+      right: 25%;
+      width: 320px;
+      height: 320px;
+      background: linear-gradient(to top left, rgba(37, 99, 235, 0.2), transparent);
+      animation: float2 10s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(30px, 20px); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-30px, -20px); }
+    }
+
+    /* ===== TOP NAV ===== */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      backdrop-filter: blur(16px);
+      background: rgba(0, 0, 0, 0.5);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+      animation: slideDown 0.6s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.125rem;
+      background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 50%, #7c3aed 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 4s ease-in-out infinite;
+      cursor: pointer;
+    }
+
+    .brand img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      object-fit: contain;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      animation: fadeIn 0.8s ease-out 0.3s both;
+    }
+
+    /* ===== NAV BUTTONS - PILL-SHAPED HOVER (Liquid feel, not liquid behavior) ===== */
+    .nav-buttons a, .nav-buttons button {
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 8px 16px;
+      color: #fff;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-buttons a::before, .nav-buttons button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.4s ease, height 0.4s ease;
+    }
+
+    .nav-buttons a:hover::before, .nav-buttons button:hover::before {
+      width: 200px;
+      height: 200px;
+    }
+
+    .nav-buttons a:hover, .nav-buttons button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    .nav-buttons a:active, .nav-buttons button:active {
+      transform: scale(0.95);
+    }
+
+    .nav-buttons .active {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .hamburger {
+      width: 32px;
+      height: 24px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .hamburger span {
+      height: 3px;
+      width: 100%;
+      background: #fff;
+      border-radius: 3px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .hamburger.active span:nth-child(1) {
+      transform: translateY(10px) rotate(45deg);
+    }
+    .hamburger.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger.active span:nth-child(3) {
+      transform: translateY(-10px) rotate(-45deg);
+    }
+
+    .mobile-nav-panel {
+      display: none;
+      position: absolute;
+      top: var(--nav-height);
+      right: 12px;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 8px;
+      z-index: 70;
+      min-width: 180px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .mobile-nav-panel.open {
+      opacity: 1;
+      transform: none;
+      pointer-events: auto;
+    }
+
+    /* ===== MOBILE NAV - PILL-SHAPED ITEMS ===== */
+    .mobile-nav-panel a, .mobile-nav-panel button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      color: #fff;
+      text-decoration: none;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border-radius: 999px;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .mobile-nav-panel a:hover, .mobile-nav-panel button:hover {
+      background: rgba(139, 92, 246, 0.2);
+    }
+
+    .mobile-nav-panel a:active, .mobile-nav-panel button:active {
+      transform: scale(0.97);
+    }
+
+    /* ===== VIEW CONTAINERS ===== */
+    .view {
+      display: none;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ===== LOGO ===== */
+    .logo-container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      padding-top: 60px;
+    }
+
+    .logo-wrapper {
+      position: relative;
+    }
+
+    .logo-text {
+      font-size: 3.5rem;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      text-align: center;
+      background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 25%, #7c3aed 50%, #6366f1 75%, #8b5cf6 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 4s ease-in-out infinite;
+    }
+
+    .logo-glow {
+      position: absolute;
+      inset: 0;
+      font-size: 3.5rem;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      filter: blur(16px);
+      opacity: 0.4;
+      background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 25%, #7c3aed 50%, #6366f1 75%, #8b5cf6 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .floating {
+      animation: floating 2.5s ease-in-out infinite;
+    }
+
+    @keyframes floating {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero-section {
+      position: relative;
+      z-index: 10;
+      max-width: 768px;
+      margin: 0 auto;
+      text-align: center;
+      padding-top: 32px;
+    }
+
+    .gradient-divider {
+      height: 4px;
+      width: 96px;
+      margin: 0 auto 24px;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #8b5cf6, #a78bfa, #7c3aed);
+      background-size: 200% 100%;
+      animation: dividerGradient 3s linear infinite;
+    }
+
+    @keyframes dividerGradient {
+      0%, 100% { background-position: 0% 0%; }
+      50% { background-position: 100% 0%; }
+    }
+
+    .hero-text {
+      margin-top: 24px;
+      font-size: 1.125rem;
+      color: var(--neutral-300);
+      line-height: 1.75;
+    }
+
+    .font-semibold {
+      font-weight: 600;
+    }
+
+    /* ===== CONTENT CONTAINER ===== */
+    .content-container {
+      position: relative;
+      z-index: 10;
+      max-width: 1200px;
+      margin: 48px auto 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      padding: 0 16px;
+    }
+
+    @media (max-width: 900px) {
+      .content-container {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    /* ===== GLASS CARD ===== */
+    .glass-card {
+      backdrop-filter: blur(24px);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      transition: border-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-4px);
+    }
+
+    /* ===== INFO SECTION ===== */
+    .info-section {
+      animation: fadeInUp 0.8s ease-out 0.3s both;
+    }
+
+    .info-section h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .info-section .subtitle {
+      color: var(--neutral-300);
+      font-size: 1rem;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    .how-it-works {
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.05);
+    }
+
+    .how-it-works strong {
+      font-size: 1.25rem;
+      color: #fff;
+    }
+
+    .how-it-works ol {
+      margin-top: 12px;
+      padding-left: 20px;
+      color: var(--neutral-300);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    /* ===== FORM SECTION ===== */
+    .form-section {
+      animation: fadeInUp 0.8s ease-out 0.5s both;
+    }
+
+    .form-section h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .form-section .subtitle {
+      color: var(--neutral-400);
+      font-size: 0.875rem;
+      margin-bottom: 24px;
+    }
+
+    /* ===== INPUT STYLES ===== */
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--purple-500);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 4px 12px rgba(139, 92, 246, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .textarea-field {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      outline: none;
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .textarea-field:focus {
+      border-color: var(--purple-500);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 4px 12px rgba(139, 92, 246, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .textarea-field::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* ===== PRIMARY BUTTON ===== */
+    .primary-button {
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    }
+
+    .primary-button:hover:not(:disabled) {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 30px rgba(139, 92, 246, 0.5);
+    }
+
+    .primary-button:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .primary-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .primary-button .button-shimmer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transform: translateX(-100%);
+    }
+
+    .primary-button.loading .button-shimmer {
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ===== LOADER ===== */
+    .loader {
+      display: none;
+      margin-top: 24px;
+      text-align: center;
+      color: var(--neutral-400);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* ===== DASHBOARD STYLES ===== */
+    .dashboard-container {
+      position: relative;
+      z-index: 10;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 25%, #7c3aed 50%, #6366f1 75%, #8b5cf6 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 4s ease-in-out infinite;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .clear-btn {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red-400);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .clear-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .timezone-info {
+      color: var(--neutral-400);
+      font-size: 0.75rem;
+    }
+
+    /* ===== TABLE ===== */
+    .table-card {
+      animation: fadeInUp 0.8s ease-out 0.4s both;
+      margin-bottom: 24px;
+      padding: 24px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 540px;
+    }
+
+    th {
+      text-align: left;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--neutral-400);
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    td {
+      padding: 16px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+    }
+
+    tr {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInRow 0.5s ease-out both;
+    }
+
+    tr:nth-child(1) { animation-delay: 0.1s; }
+    tr:nth-child(2) { animation-delay: 0.15s; }
+    tr:nth-child(3) { animation-delay: 0.2s; }
+    tr:nth-child(4) { animation-delay: 0.25s; }
+    tr:nth-child(5) { animation-delay: 0.3s; }
+    tr:nth-child(n+6) { animation-delay: 0.35s; }
+
+    @keyframes fadeInRow {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background: rgba(139, 92, 246, 0.1);
+      transform: translateX(4px);
+      box-shadow: -4px 0 0 0 var(--purple-500);
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+
+    .status-badge:hover {
+      transform: scale(1.05);
+    }
+
+    .status-good {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green-500);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .status-warning {
+      background: rgba(234, 179, 8, 0.15);
+      color: var(--yellow-500);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      box-shadow: 0 0 12px rgba(234, 179, 8, 0.2);
+    }
+
+    .status-alert {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red-400);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+    }
+
+    /* ===== DETAILS CARD ===== */
+    .details-card {
+      animation: fadeInUp 0.8s ease-out 0.6s both;
+      padding: 24px;
+    }
+
+    .details-card h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--purple-400);
+    }
+
+    .details-card p {
+      margin-bottom: 12px;
+      color: var(--neutral-300);
+      line-height: 1.6;
+    }
+
+    .details-card strong {
+      color: #fff;
+    }
+
+    .details-card pre {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      overflow-x: auto;
+      font-size: 0.875rem;
+      color: var(--neutral-300);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* ===== SPLASH OVERLAY ===== */
+    .splash-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+      background: #000;
+      z-index: 9999;
+      transition: opacity 0.7s ease, transform 0.5s ease;
+    }
+
+    .splash-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.05);
+    }
+
+    .spiral {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, #8b5cf6, #a78bfa, #7c3aed, #6366f1, #8b5cf6);
+      -webkit-mask: radial-gradient(circle at center, transparent 40%, black 41%);
+      mask: radial-gradient(circle at center, transparent 40%, black 41%);
+      animation: spin 1s linear infinite, pulseGlow 2s ease-in-out infinite;
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.5); }
+      50% { box-shadow: 0 0 50px rgba(139, 92, 246, 0.8); }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    .fade-in-scale {
+      animation: fadeInScale 0.8s ease-out;
+    }
+
+    @keyframes fadeInScale {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* ===== FOOTER SPACING ===== */
+    .footer-spacing {
+      height: 80px;
+    }
+
+    /* ===== INSIGHTS VIEW ===== */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .insight-card h3 {
+      color: var(--purple-400);
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .insight-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .insight-card ul li {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .insight-card ul li:last-child {
+      border-bottom: none;
+    }
+
+    .insight-card ul li strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .insight-detail {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.875rem;
+    }
+
+    .insight-disclaimer {
+      font-size: 0.8rem;
+      color: var(--neutral-400);
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      line-height: 1.5;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .nav-buttons {
+        display: none;
+      }
+
+      .hamburger {
+        display: flex;
+      }
+
+      .logo-text, .logo-glow {
+        font-size: 2.5rem;
+      }
+
+      .info-section h1 {
+        font-size: 1.75rem;
+      }
+
+      .form-section h2 {
+        font-size: 1.5rem;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .page-header h1 {
+        font-size: 1.75rem;
+      }
+
+      table {
+        font-size: 0.875rem;
+      }
+
+      th, td {
+        padding: 12px 4px;
+      }
+
+      .insights-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .logo-text, .logo-glow {
+        font-size: 4rem;
+      }
+
+      .hero-text {
+        font-size: 1.25rem;
+      }
+    }
+
+    /* ===== MOBILE OPTIMIZATIONS (max-width: 520px) ===== */
+    @media (max-width: 520px) {
+      /* --- General spacing --- */
+      .main-section {
+        padding: 0 12px;
+        padding-top: var(--nav-height);
+      }
+
+      /* --- Nav --- */
+      .top-nav {
+        padding: 0 12px;
+      }
+
+      .brand {
+        font-size: 1rem;
+      }
+
+      /* --- Logo & Hero --- */
+      .logo-container {
+        padding-top: 32px;
+      }
+
+      .logo-text, .logo-glow {
+        font-size: 2rem;
+      }
+
+      .hero-section {
+        padding-top: 16px;
+      }
+
+      .hero-text {
+        font-size: 0.95rem;
+      }
+
+      .gradient-divider {
+        width: 64px;
+        margin-bottom: 16px;
+      }
+
+      /* --- Content cards --- */
+      .content-container {
+        margin-top: 24px;
+        gap: 20px;
+        padding: 0 4px;
+      }
+
+      .glass-card {
+        padding: 20px 16px;
+        border-radius: 14px;
+      }
+
+      .info-section h1 {
+        font-size: 1.5rem;
+      }
+
+      .form-section h2 {
+        font-size: 1.25rem;
+      }
+
+      .how-it-works {
+        padding: 14px;
+      }
+
+      .how-it-works strong {
+        font-size: 1.05rem;
+      }
+
+      .how-it-works ol {
+        font-size: 0.9rem;
+      }
+
+      /* --- Form inputs --- */
+      .input-field, .textarea-field {
+        font-size: 16px; /* prevents iOS zoom on focus */
+        padding: 12px 14px;
+      }
+
+      .primary-button {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+      }
+
+      /* --- Dashboard --- */
+      .dashboard-container {
+        padding: 20px 8px;
+      }
+
+      .page-header h1 {
+        font-size: 1.5rem;
+      }
+
+      /* --- Timeline table --- */
+      .table-card {
+        padding: 12px 8px;
+      }
+
+      table {
+        font-size: 0.8rem;
+      }
+
+      th {
+        font-size: 0.68rem;
+        white-space: nowrap;
+      }
+
+      td {
+        padding: 10px 6px;
+        word-break: break-word;
+      }
+
+      .status-badge {
+        padding: 4px 10px;
+        font-size: 0.68rem;
+      }
+
+      /* --- Details card --- */
+      .details-card {
+        padding: 16px 12px;
+      }
+
+      .details-card h3 {
+        font-size: 1.2rem;
+      }
+
+      .details-card pre {
+        font-size: 0.78rem;
+        padding: 12px;
+      }
+
+      /* --- Insights --- */
+      .insights-grid {
+        gap: 16px;
+      }
+
+      .insight-card h3 {
+        font-size: 1rem;
+      }
+
+      /* --- Dashboard stats --- */
+      .content-container .glass-card p {
+        font-size: 0.9rem;
+      }
+
+      /* --- Footer --- */
+      .footer-spacing {
+        height: 48px;
+      }
+
+      /* --- Chat adjustments (also in chat-animations) --- */
+      .chat-pill .lp-container {
+        transform: scale(1);
+      }
+
+      /* --- Modal --- */
+      .chat-modal {
+        padding: 20px 20px;
+        max-width: 320px;
+      }
+    }
+
+    /* ===== MOBILE OPTIMIZATIONS (max-width: 380px — small phones) ===== */
+    @media (max-width: 380px) {
+      .logo-text, .logo-glow {
+        font-size: 1.7rem;
+      }
+
+      .hero-text {
+        font-size: 0.88rem;
+      }
+
+      .info-section h1 {
+        font-size: 1.3rem;
+      }
+
+      .page-header h1 {
+        font-size: 1.3rem;
+      }
+
+      .glass-card {
+        padding: 16px 12px;
+      }
+
+      th, td {
+        padding: 8px 4px;
+        font-size: 0.75rem;
+      }
+    }
+
+    /* ===== MOBILE-DETECTED OVERRIDES (via JS .is-mobile class) ===== */
+    .is-mobile body {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    .is-mobile .floating-gradient {
+      display: none; /* save GPU on mobile */
+    }
+
+    .is-mobile .glass-card:hover {
+      transform: none; /* disable hover lift on touch */
+    }
+
+    .is-mobile tbody tr:hover {
+      transform: none;
+    }
+
+    /* ---- Mobile chat typography ---- */
+    .is-mobile .chat-msg.ai .chat-bubble {
+      padding: 14px 16px;
+    }
+    .is-mobile .chat-msg.ai .chat-bubble p {
+      margin: 0 0 16px 0;
+      line-height: 1.7;
+    }
+    .is-mobile .chat-msg.ai .chat-bubble li {
+      margin-bottom: 10px;
+      line-height: 1.7;
+    }
+    .is-mobile .chat-msg.ai .chat-bubble ul,
+    .is-mobile .chat-msg.ai .chat-bubble ol {
+      margin: 10px 0 18px 0;
+    }
+    .is-mobile .chat-msg {
+      max-width: 92%;
+    }
+    .is-mobile #chatHistory {
+      padding-bottom: 16px;
+    }
+
+    /* iOS safe area padding */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .chat-input-bar {
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
+      }
+
+      @media (max-width: 520px) {
+        .chat-input-bar {
+          padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+      }
+    }
+
+    /* Horizontal scroll hint for tables on mobile */
+    @media (max-width: 520px) {
+      .table-card {
+        position: relative;
+      }
+
+      .table-card::after {
+        content: 'Scroll →';
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        font-size: 0.65rem;
+        color: rgba(255, 255, 255, 0.3);
+        pointer-events: none;
+        animation: fadeOut 3s ease-out 2s forwards;
+      }
+
+      @keyframes fadeOut {
+        to { opacity: 0; }
+      }
+    }
+
+    /* Smooth tap feedback */
+    button, a {
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:active, a:active {
+      transform: scale(0.96);
+      opacity: 0.85;
+    }
+
+    /* ===== GRACEFUL DEGRADATION: backdrop-filter unsupported ===== */
+    @supports not (backdrop-filter: blur(1px)) {
+      .glass-card {
+        background: rgba(30, 30, 30, 0.95);
+      }
+
+      .top-nav {
+        background: rgba(0, 0, 0, 0.92);
+      }
+
+      .mobile-nav-panel {
+        background: rgba(0, 0, 0, 0.95);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- SPLASH -->
+  <div class="splash-overlay" id="splashOverlay" role="status" aria-live="polite">
+    <div class="spiral" aria-hidden="true"></div>
+  </div>
+
+  <section class="main-section">
+    <!-- Animated Background Gradients -->
+    <div class="background-container">
+      <div class="radial-gradient"></div>
+      <div class="floating-gradient gradient-1"></div>
+      <div class="floating-gradient gradient-2"></div>
+    </div>
+
+    <!-- NAV -->
+    <div class="top-nav" role="navigation" aria-label="Top navigation">
+      <div class="brand" onclick="switchView('home')">
+        <span style="-webkit-text-fill-color: inherit;">HealthIQ</span>
+      </div>
+
+      <div class="nav-buttons" id="desktopNav">
+        <button id="navHome" class="active" onclick="switchView('home')">Home</button>
+        <button id="navTimeline" onclick="switchView('timeline')">Timeline</button>
+        <button id="navAI" onclick="switchView('ai')">AI Assistant</button>
+        <button id="navInsights" onclick="switchView('insights')">Insights</button>
+        <button id="navDashboard" onclick="switchView('dashboard')">Dashboard</button>
+      </div>
+
+      <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="mobile-nav-panel" id="mobileNavPanel" aria-hidden="true">
+        <button onclick="switchView('home'); closeMobileNav();">Home</button>
+        <button onclick="switchView('timeline'); closeMobileNav();">Timeline</button>
+        <button onclick="switchView('ai'); closeMobileNav();">AI Assistant</button>
+        <button onclick="switchView('insights'); closeMobileNav();">Insights</button>
+        <button onclick="switchView('dashboard'); closeMobileNav();">Dashboard</button>
+      </div>
+    </div>
+
+    <!-- ===== HOME VIEW ===== -->
+    <div id="homeView" class="view active">
+      <!-- ===== ANIMATED LOGO ===== -->
+      <div class="logo-container fade-in-scale">
+        <div class="logo-wrapper">
+          <h1 class="logo-text" id="typingTitle"></h1>
+          <div class="logo-glow" id="typingGlow"></div>
+        </div>
+      </div>
+
+      <!-- ===== HERO TEXT ===== -->
+      <div class="hero-section">
+        <div class="gradient-divider"></div>
+        <p class="hero-text">
+          <span class="font-semibold">Your health journey, intelligently tracked.</span>
+          <br><br>
+          Log symptoms, medications, and lifestyle events. Get AI-powered insights to understand your health better.
+        </p>
+        <p style="margin-top: 20px; font-size: 0.875rem; color: var(--neutral-400); line-height: 1.6; max-width: 600px; margin-left: auto; margin-right: auto;">
+          HealthIQ is not a medical device. It does not diagnose, treat, or prevent any condition. Always consult a qualified healthcare professional for medical advice.
+        </p>
+      </div>
+
+      <!-- ===== MAIN CONTENT ===== -->
+      <div class="content-container">
+        <!-- Left: Info Section -->
+        <div class="info-section glass-card">
+          <h1>Smart <span style="background: linear-gradient(135deg, #8b5cf6, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Health Tracking.</span></h1>
+          <p class="subtitle">
+            Track symptoms, medications, and health events in one place. HealthIQ helps you see patterns and correlations you might miss.
+          </p>
+          <p class="subtitle">
+            Not just simple logging. Understand your health trends, get AI-powered insights, and share comprehensive reports with your healthcare providers.
+          </p>
+
+          <div class="how-it-works">
+            <strong>How it works.</strong>
+            <ol>
+              <li>Log your symptoms, medications, and health events.</li>
+              <li>Review your health timeline for patterns.</li>
+              <li>Get AI-powered insights and correlations.</li>
+              <li>Share reports with healthcare providers.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Right: Quick Log Form -->
+        <div class="form-section glass-card">
+          <h2>Quick <span style="color: var(--purple-400);">Log.</span></h2>
+          <p class="subtitle">Log a new health event to your timeline.</p>
+
+          <form id="quickLogForm">
+            <div class="input-group">
+              <label class="input-label">Event Type</label>
+              <select class="input-field" name="event_type" required>
+                <option value="">Select type...</option>
+                <option value="symptom">Symptom</option>
+                <option value="medication">Medication</option>
+                <option value="lifestyle">Lifestyle</option>
+                <option value="clinical">Clinical Visit</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Description</label>
+              <textarea class="textarea-field" name="description" placeholder="Describe the event..." required></textarea>
+            </div>
+
+            <button id="logBtn" class="primary-button" type="submit">
+              <div class="button-shimmer"></div>
+              <span>Log Event</span>
+            </button>
+          </form>
+
+          <div class="loader" id="loader">Saving...</div>
+        </div>
+      </div>
+
+      <!-- Footer spacing -->
+      <div class="footer-spacing"></div>
+    </div>
+
+    <!-- ===== TIMELINE VIEW ===== -->
+    <div id="timelineView" class="view">
+      <div class="dashboard-container">
+        <div class="page-header">
+          <h1>Health Timeline</h1>
+          <div class="header-actions">
+            <span id="timezoneInfo" class="timezone-info"></span>
+          </div>
+        </div>
+
+        <div class="glass-card table-card">
+          <table id="eventsTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Severity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated from unified in-page repository on view switch -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="glass-card details-card" id="eventDetails">
+          <em style="color: var(--neutral-400);">Select an event to view details.</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== AI ASSISTANT VIEW (Chat Only) ===== -->
+    <div id="aiView" class="view">
+      <div class="dashboard-container" style="max-width: 800px;">
+        <div class="page-header">
+          <h1>AI Health Assistant</h1>
+          <div class="header-actions">
+            <button type="button" id="chatClearBtn" class="chat-clear-btn">Clear Chat</button>
+          </div>
+        </div>
+
+        <!-- LIQUID GLASS CHAT CONTAINER -->
+        <div class="chat-pill" id="chatPill">
+          <div class="lp-container">
+            <div class="lp-viewport" id="chatViewport">
+              <div class="chat-history" id="chatHistory">
+                <!-- Empty state or restored messages rendered by chat-ui.js -->
+              </div>
+              <div class="chat-input-bar" id="chatInputBar">
+                <textarea id="aiChatInput" placeholder="Ask about your health data..." rows="1"></textarea>
+                <button type="button" id="aiChatSend" class="chat-send-btn">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="chatDemoNotice" class="chat-demo-notice">
+          Demo Mode — AI unavailable. Responses are pre-generated placeholders.
+        </div>
+
+        <!-- Clear Chat Confirmation Modal -->
+        <div class="chat-modal-overlay" id="chatModalOverlay" style="display:none;">
+          <div class="chat-modal">
+            <h3>Clear Conversation?</h3>
+            <p>This will permanently delete all chat messages. This action cannot be undone.</p>
+            <div class="chat-modal-actions">
+              <button type="button" id="chatModalCancel" class="chat-modal-cancel">Cancel</button>
+              <button type="button" id="chatModalConfirm" class="chat-modal-confirm">Clear All</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div id="dashboardView" class="view">
+      <div class="dashboard-container">
+        <div class="page-header">
+          <h1>Health Dashboard</h1>
+          <div class="header-actions">
+            <button id="exportBtn" class="primary-button" style="width: auto; margin: 0; padding: 10px 20px;">Export Report</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Stats Cards -->
+        <div id="dashboardStats" class="content-container" style="margin-top: 0;"></div>
+
+        <div class="glass-card table-card" style="margin-top: 24px;">
+          <h3 style="color: var(--purple-400); margin-bottom: 16px;">Recent Activity</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Action</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardActivityBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INSIGHTS VIEW ===== -->
+    <div id="insightsView" class="view">
+      <div class="dashboard-container">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <h1>Health Insights</h1>
+          <button id="clearAllDataBtn" class="primary-button" style="width:auto;margin:0;padding:10px 20px;background:linear-gradient(135deg,#ef476f,#d63384);font-size:0.85rem;">Clear All Health Data</button>
+        </div>
+
+        <!-- Dynamic insights container — populated by JS -->
+        <div id="insightsContent" class="insights-grid"></div>
+
+        <div class="glass-card" style="margin-top: 8px;">
+          <p style="color: var(--neutral-400); font-size: 0.85rem; text-align: center; line-height: 1.6;">
+            HealthIQ is not a medical device. It does not diagnose, treat, or prevent any condition.
+            Always consult a qualified healthcare professional for medical advice.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLEAR DATA CONFIRMATION MODAL -->
+    <div id="clearDataModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+      <div style="background:var(--card-bg,#1e1e2e);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center;">
+        <h3 style="color:#ef476f;margin-bottom:16px;">Delete All Health Data?</h3>
+        <p style="color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:24px;">
+          This will permanently delete your logged health events, insights, and chat history.
+          <strong style="color:#ef476f;">This action cannot be undone.</strong>
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;">
+          <button id="clearDataCancel" class="primary-button" style="width:auto;padding:10px 24px;background:rgba(255,255,255,0.1);color:var(--neutral-200);">Cancel</button>
+          <button id="clearDataConfirm" class="primary-button" style="width:auto;padding:10px 24px;background:linear-gradient(135deg,#ef476f,#d63384);">Delete Everything</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPLASH REMOVAL -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      const overlay = document.getElementById('splashOverlay');
+      if (!overlay) return;
+      setTimeout(()=>{
+        overlay.classList.add('hidden');
+        setTimeout(()=>{ overlay.remove(); }, 700);
+      }, 600);
+    });
+  </script>
+
+  <!-- AUTO MOBILE MODE DETECTION -->
+  <script>
+    (function() {
+      function isMobileDevice() {
+        // Detect by user agent
+        var ua = navigator.userAgent || navigator.vendor || '';
+        if (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua)) return true;
+        // Detect by screen size
+        if (window.innerWidth <= 768) return true;
+        // Detect by touch capability + small screen
+        if (('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 1024) return true;
+        return false;
+      }
+
+      if (isMobileDevice()) {
+        document.documentElement.classList.add('is-mobile');
+      }
+
+      // Re-check on resize (e.g. rotating tablet)
+      var resizeTimeout;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+          if (window.innerWidth <= 768) {
+            document.documentElement.classList.add('is-mobile');
+          } else {
+            document.documentElement.classList.remove('is-mobile');
+          }
+        }, 200);
+      });
+
+      // Fix iOS viewport height (100vh includes address bar)
+      function setVH() {
+        var vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+      }
+      setVH();
+      window.addEventListener('resize', setVH);
+
+      // Fix mobile keyboard pushing viewport — keep chat input visible
+      if (isMobileDevice()) {
+        var chatInputEl = document.getElementById('aiChatInput');
+        if (chatInputEl) {
+          chatInputEl.addEventListener('focus', function() {
+            setTimeout(function() {
+              chatInputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+          });
+        }
+      }
+    })();
+  </script>
+
+  <!-- STALE DATA CLEANER -->
+  <script>
+    (function() {
+      // Clear pre-deployment test data on first production visit.
+      // Uses a version flag — bump this to force a re-clean.
+      var DATA_VERSION = 'healthiq_data_v2';
+      var versionKey = 'healthiq_data_version';
+
+      try {
+        var currentVersion = localStorage.getItem(versionKey);
+        if (currentVersion !== DATA_VERSION) {
+          // Clear all HealthIQ-related localStorage (EXCEPT device identity)
+          var keysToRemove = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key !== 'healthiq_device_user_id' && (key.indexOf('healthiq') !== -1 || key.indexOf('HealthIQ') !== -1)) {
+              keysToRemove.push(key);
+            }
+          }
+          for (var j = 0; j < keysToRemove.length; j++) {
+            localStorage.removeItem(keysToRemove[j]);
+          }
+          localStorage.setItem(versionKey, DATA_VERSION);
+          console.log('[HealthIQ] Cleared stale data from previous version.');
+        }
+      } catch (e) {
+        // localStorage unavailable — ignore
+      }
+    })();
+  </script>
+
+  <!-- PER-DEVICE USER ISOLATION (Privacy Architecture) -->
+  <script>
+    /**
+     * PRIVACY-CRITICAL: Per-device user identity.
+     *
+     * Without authentication, each device gets a cryptographically random
+     * UUID stored in localStorage. This ensures:
+     *   - Every device has a unique userId
+     *   - Timeline data is scoped per-device
+     *   - AI prompts only receive this device's data
+     *   - No cross-device data leakage
+     *
+     * When auth is implemented, replace this with authenticated user identity.
+     */
+    (function() {
+      'use strict';
+
+      var DEVICE_USER_KEY = 'healthiq_device_user_id';
+
+      function generateUUID() {
+        // crypto.randomUUID() if available (modern browsers), else fallback
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return 'device-' + crypto.randomUUID();
+        }
+        // Fallback: RFC4122 v4 compliant
+        return 'device-' + 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = (Math.random() * 16) | 0;
+          var v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
+      }
+
+      function getOrCreateDeviceUserId() {
+        try {
+          var existing = localStorage.getItem(DEVICE_USER_KEY);
+          if (existing && typeof existing === 'string' && existing.length > 10) {
+            return existing;
+          }
+          var newId = generateUUID();
+          localStorage.setItem(DEVICE_USER_KEY, newId);
+          console.log('[HealthIQ] New device user ID created:', newId);
+          return newId;
+        } catch (e) {
+          // localStorage unavailable — generate ephemeral session-only ID
+          var sessionId = generateUUID();
+          console.warn('[HealthIQ] localStorage unavailable — using ephemeral session ID:', sessionId);
+          return sessionId;
+        }
+      }
+
+      // Global device user identity — used by ALL API calls
+      window.__healthiq_deviceUserId = getOrCreateDeviceUserId();
+      console.log('[HealthIQ] Device user ID:', window.__healthiq_deviceUserId);
+    })();
+  </script>
+
+  <!-- API CONFIGURATION -->
+  <script>
+    // Backend API URL — change to Render URL for production deployment.
+    // On localhost/127.0.0.1, default to local dev server.
+    // On any other host (e.g. Hostinger), skip localhost polling entirely.
+    (function() {
+      var host = window.location.hostname;
+      var isLocal = (host === 'localhost' || host === '127.0.0.1' || host === '');
+
+      if (!window.__HEALTHIQ_API) {
+        window.__HEALTHIQ_API = isLocal ? 'http://localhost:3001' : 'https://healthiq-backend-xjyb.onrender.com';
+      }
+
+      var apiUrl = window.__HEALTHIQ_API;
+      window.__healthiq_apiStatus = apiUrl ? 'checking' : 'offline';
+      var statusEl = null;
+
+      function createStatusIndicator() {
+        var nav = document.querySelector('.top-nav');
+        if (!nav) return;
+        var dot = document.createElement('span');
+        dot.id = 'apiStatusDot';
+        dot.style.cssText = 'width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:8px;vertical-align:middle;transition:background 0.3s ease;';
+        var brand = nav.querySelector('.brand');
+        if (brand) brand.appendChild(dot);
+        statusEl = dot;
+        applyDot();
+      }
+
+      function applyDot() {
+        if (!statusEl) return;
+        var s = window.__healthiq_apiStatus;
+        if (s === 'connected') {
+          statusEl.style.background = '#06d6a0';
+          statusEl.title = 'API: connected';
+        } else if (s === 'offline') {
+          statusEl.style.background = '#ef476f';
+          statusEl.title = 'API: offline (local mode)';
+        } else {
+          statusEl.style.background = '#e8b92c';
+          statusEl.title = 'API: checking...';
+        }
+      }
+
+      function setStatus(status) {
+        window.__healthiq_apiStatus = status;
+        applyDot();
+      }
+
+      function checkHealth() {
+        fetch(apiUrl + '/api/health')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data && data.status === 'ok') setStatus('connected');
+            else setStatus('offline');
+          })
+          .catch(function() { setStatus('offline'); });
+      }
+
+      createStatusIndicator();
+
+      // Only poll the backend if an API URL is configured.
+      if (apiUrl) {
+        checkHealth();
+        setInterval(checkHealth, 30000);
+      }
+    })();
+  </script>
+
+  <!-- VIEW SWITCHING -->
+  <script>
+    function switchView(view) {
+      const views = ['home', 'timeline', 'ai', 'insights', 'dashboard'];
+      const viewMap = {
+        'home': 'homeView',
+        'timeline': 'timelineView',
+        'ai': 'aiView',
+        'insights': 'insightsView',
+        'dashboard': 'dashboardView'
+      };
+      const navMap = {
+        'home': 'navHome',
+        'timeline': 'navTimeline',
+        'ai': 'navAI',
+        'insights': 'navInsights',
+        'dashboard': 'navDashboard'
+      };
+
+      views.forEach(v => {
+        const viewEl = document.getElementById(viewMap[v]);
+        const navEl = document.getElementById(navMap[v]);
+        if (v === view) {
+          viewEl.classList.add('active');
+          navEl.classList.add('active');
+        } else {
+          viewEl.classList.remove('active');
+          navEl.classList.remove('active');
+        }
+      });
+
+      // When switching to timeline: fetch from backend and merge into in-page store.
+      if (view === 'timeline') {
+        // Render local data immediately.
+        if (window.__healthiq_renderTimeline) {
+          window.__healthiq_renderTimeline();
+        }
+
+        // Only sync from backend if user hasn't cleared data this session.
+        if (!window.__healthiq_dataCleared) {
+          var apiUrl = window.__HEALTHIQ_API;
+          if (apiUrl && window.__healthiq_apiStatus === 'connected') {
+            var _userId = window.__healthiq_deviceUserId || 'anonymous';
+            fetch(apiUrl + '/api/timeline/' + encodeURIComponent(_userId))
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                if (!data || !Array.isArray(data.events)) return;
+
+                // Merge server events into in-page store (skip duplicates).
+                var existingIds = {};
+                var local = window.__healthiq_timeline || [];
+                for (var i = 0; i < local.length; i++) {
+                  existingIds[local[i].id] = true;
+                }
+
+                var added = 0;
+                for (var j = 0; j < data.events.length; j++) {
+                  var evt = data.events[j];
+                  if (!existingIds[evt.id]) {
+                    try {
+                      window.__healthiq_appendEvent(evt);
+                      added++;
+                    } catch (e) { /* skip duplicates */ }
+                  }
+                }
+
+                if (added > 0 && window.__healthiq_renderTimeline) {
+                  window.__healthiq_renderTimeline();
+                }
+              })
+              .catch(function() { /* offline — local data already rendered */ });
+          }
+        }
+      }
+
+      // Dynamic rendering for insights and dashboard views.
+      if (view === 'insights' && window.__healthiq_renderInsights) {
+        window.__healthiq_renderInsights();
+      }
+      if (view === 'dashboard' && window.__healthiq_renderDashboard) {
+        window.__healthiq_renderDashboard();
+      }
+    }
+
+    function closeMobileNav() {
+      const hamburger = document.getElementById("hamburgerBtn");
+      const mobilePanel = document.getElementById("mobileNavPanel");
+      mobilePanel.classList.remove("open");
+      hamburger.classList.remove("active");
+      setTimeout(() => {
+        mobilePanel.style.display = "none";
+      }, 250);
+    }
+  </script>
+
+  <!-- TYPING ANIMATION -->
+  <script>
+    (function () {
+      const text = "HealthIQ";
+      const target = document.getElementById("typingTitle");
+      const glow = document.getElementById("typingGlow");
+      if (!target) return;
+
+      let index = 0;
+
+      function type() {
+        if (index <= text.length) {
+          const current = text.slice(0, index);
+          target.textContent = current;
+          if (glow) glow.textContent = current;
+          index++;
+          setTimeout(type, 70);
+        }
+      }
+
+      setTimeout(type, 800);
+    })();
+  </script>
+
+  <!-- MOBILE NAV -->
+  <script>
+    (function () {
+      const hamburger = document.getElementById("hamburgerBtn");
+      const mobilePanel = document.getElementById("mobileNavPanel");
+
+      hamburger && hamburger.addEventListener("click", () => {
+        const isOpen = mobilePanel.classList.contains("open");
+        mobilePanel.classList.toggle("open");
+        hamburger.classList.toggle("active");
+
+        if (!isOpen) {
+          mobilePanel.style.display = "block";
+        } else {
+          setTimeout(() => {
+            mobilePanel.style.display = "none";
+          }, 250);
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          mobilePanel.classList.contains("open") &&
+          !mobilePanel.contains(e.target) &&
+          e.target !== hamburger &&
+          !hamburger.contains(e.target)
+        ) {
+          closeMobileNav();
+        }
+      });
+    })();
+  </script>
+
+  <!-- UNIFIED IN-PAGE TIMELINE REPOSITORY (single source of truth) -->
+  <script>
+    (function() {
+      // Single-source-of-truth in-page repository.
+      // ALL reads (Timeline table, Dashboard, Insights, AI view) go through this store.
+      // ALL writes (Quick Log, backend sync) go through appendEvent().
+      // No separate arrays, no hardcoded table rows, no dual truth.
+      var _nextId = 100;
+      var _timeline = [];
+
+      function appendEvent(event) {
+        for (var i = 0; i < _timeline.length; i++) {
+          if (_timeline[i].id === event.id) {
+            throw new Error('Duplicate event ID: ' + event.id);
+          }
+        }
+        _timeline.push(Object.freeze(event));
+        return event;
+      }
+
+      function nextId(prefix) {
+        return prefix + '-' + (_nextId++);
+      }
+
+      function getAll() {
+        return _timeline.slice();
+      }
+
+      function badgeClass(eventType) {
+        var t = eventType.toLowerCase();
+        if (t === 'symptom') return 'status-warning';
+        if (t === 'clinical') return 'status-alert';
+        return 'status-good';
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function formatDate(iso) {
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        return d.toLocaleString(undefined, {
+          year: 'numeric', month: 'short', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      }
+
+      function renderTimelineTable() {
+        var tbody = document.querySelector('#eventsTable tbody');
+        if (!tbody) return;
+        var events = getAll().slice().sort(function(a, b) {
+          return new Date(b.timestamp.absolute).getTime() - new Date(a.timestamp.absolute).getTime();
+        });
+        if (events.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--neutral-400);padding:24px;">No events logged yet. Use Quick Log to add your first event.</td></tr>';
+          return;
+        }
+        var html = '';
+        for (var i = 0; i < events.length; i++) {
+          var e = events[i];
+          var desc = e.description || e.name || e.doctorVisit || '(no description)';
+          var severity = e.intensity || e.severity || '-';
+          html +=
+            '<tr>' +
+            '<td>' + formatDate(e.timestamp.absolute) + '</td>' +
+            '<td><span class="status-badge ' + badgeClass(e.eventType) + '">' + escapeHtml(e.eventType) + '</span></td>' +
+            '<td>' + escapeHtml(desc) + '</td>' +
+            '<td>' + escapeHtml(severity) + '</td>' +
+            '</tr>';
+        }
+        tbody.innerHTML = html;
+      }
+
+      // No seed/demo data — timeline starts empty.
+      // Users add events via Quick Log or backend sync.
+
+      function clearTimeline() {
+        _timeline.length = 0;
+        _nextId = 100;
+      }
+
+      // Expose unified API on window (single source of truth).
+      window.__healthiq_clearTimeline = clearTimeline;
+      window.__healthiq_timeline = _timeline;
+      window.__healthiq_appendEvent = appendEvent;
+      window.__healthiq_nextId = nextId;
+      window.__healthiq_renderTimeline = renderTimelineTable;
+
+      // Initial render.
+      renderTimelineTable();
+    })();
+  </script>
+
+  <!-- QUICK LOG FORM (optimistic update + async backend POST) -->
+  <script>
+    (function() {
+      var form = document.getElementById("quickLogForm");
+      var btn = document.getElementById("logBtn");
+      var loader = document.getElementById("loader");
+
+      form && form.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        var eventType = form.elements["event_type"].value;
+        var description = form.elements["description"].value.trim();
+
+        if (!eventType || !description) return;
+
+        btn.disabled = true;
+        btn.classList.add("loading");
+        loader.style.display = "block";
+
+        var event = {
+          id: window.__healthiq_nextId(eventType),
+          eventType: eventType.charAt(0).toUpperCase() + eventType.slice(1),
+          timestamp: { absolute: new Date().toISOString() },
+          source: "user",
+          confidence: "medium",
+          visibilityScope: "user-only",
+          description: description,
+        };
+
+        // Optimistic update: add to in-page store immediately.
+        try {
+          window.__healthiq_appendEvent(event);
+          if (window.__healthiq_renderTimeline) {
+            window.__healthiq_renderTimeline();
+          }
+        } catch (err) {
+          loader.textContent = 'Error: ' + err.message;
+          setTimeout(function() {
+            btn.disabled = false;
+            btn.classList.remove("loading");
+            loader.style.display = "none";
+            loader.textContent = "Saving...";
+          }, 1200);
+          return;
+        }
+
+        form.reset();
+        loader.textContent = 'Event logged locally.';
+
+        // Async POST to backend (fire-and-forget, works offline).
+        var apiUrl = window.__HEALTHIQ_API;
+        if (apiUrl && window.__healthiq_apiStatus === 'connected') {
+          var _uid = window.__healthiq_deviceUserId || 'anonymous';
+          fetch(apiUrl + '/api/timeline/' + encodeURIComponent(_uid) + '/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: event }),
+          })
+          .then(function(r) { return r.json(); })
+          .then(function() { loader.textContent = 'Event synced to server.'; })
+          .catch(function() { loader.textContent = 'Saved locally (server offline).'; });
+        }
+
+        setTimeout(function() {
+          btn.disabled = false;
+          btn.classList.remove("loading");
+          loader.style.display = "none";
+          loader.textContent = "Saving...";
+        }, 1800);
+      });
+    })();
+  </script>
+
+  <!-- TIMEZONE INFO -->
+  <script>
+    (function(){
+      const tzInfo = document.getElementById("timezoneInfo");
+      if (!tzInfo) return;
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const now = new Date();
+      const offset = -now.getTimezoneOffset() / 60;
+      const offsetStr = offset >= 0 ? `+${offset}` : `${offset}`;
+      tzInfo.textContent = `${tz} (UTC${offsetStr})`;
+    })();
+  </script>
+
+  <!-- CHAT STORAGE (inlined from scripts/chat-storage.js — must load before chat-ui) -->
+  <script>
+/* ==========================================================
+   HEALTHIQ — CHAT STORAGE (localStorage Persistence)
+   Single-responsibility module: CRUD for chat messages.
+   No DOM access. No UI logic. Pure data layer.
+   ========================================================== */
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'healthiq_chat_history_v1';
+  var MAX_MESSAGES = 200;
+
+  function generateId() {
+    return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function isValidMessage(msg) {
+    return (
+      msg &&
+      typeof msg === 'object' &&
+      typeof msg.id === 'string' &&
+      (msg.role === 'user' || msg.role === 'assistant') &&
+      typeof msg.content === 'string' &&
+      typeof msg.timestamp === 'number'
+    );
+  }
+
+  function loadMessages() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        localStorage.removeItem(STORAGE_KEY);
+        return [];
+      }
+
+      var valid = [];
+      for (var i = 0; i < parsed.length; i++) {
+        if (isValidMessage(parsed[i])) {
+          valid.push(parsed[i]);
+        }
+      }
+
+      if (valid.length > MAX_MESSAGES) {
+        valid = valid.slice(valid.length - MAX_MESSAGES);
+      }
+
+      return valid;
+    } catch (e) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      return [];
+    }
+  }
+
+  function saveMessages(messages) {
+    try {
+      var toSave = messages;
+      if (toSave.length > MAX_MESSAGES) {
+        toSave = toSave.slice(toSave.length - MAX_MESSAGES);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      return true;
+    } catch (e) {
+      if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+        try {
+          var trimmed = messages.slice(Math.floor(messages.length / 2));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+      return false;
+    }
+  }
+
+  function addMessage(role, content, demoMode) {
+    var messages = loadMessages();
+    var msg = {
+      id: generateId(),
+      role: role,
+      content: content,
+      timestamp: Date.now(),
+      demoMode: !!demoMode,
+    };
+
+    messages.push(msg);
+    saveMessages(messages);
+    return msg;
+  }
+
+  function getMessages() {
+    return loadMessages();
+  }
+
+  function clearMessages() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  function getMessageCount() {
+    return loadMessages().length;
+  }
+
+  window.HealthIQChatStorage = {
+    addMessage: addMessage,
+    getMessages: getMessages,
+    clearMessages: clearMessages,
+    getMessageCount: getMessageCount,
+    MAX_MESSAGES: MAX_MESSAGES,
+  };
+})();
+  </script>
+
+  <!-- DYNAMIC INSIGHTS RENDERER -->
+  <script>
+  (function() {
+    'use strict';
+
+    function escapeHtml(str) {
+      return String(str).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function renderInsights() {
+      var container = document.getElementById('insightsContent');
+      if (!container) return;
+
+      var events = (window.__healthiq_timeline || []).slice();
+      if (events.length === 0) {
+        container.innerHTML =
+          '<div class="glass-card insight-card" style="grid-column:1/-1;text-align:center;padding:48px 24px;">' +
+            '<div style="font-size:2.5rem;margin-bottom:16px;">📊</div>' +
+            '<h3 style="margin-bottom:12px;">No Insights Yet</h3>' +
+            '<p style="color:rgba(255,255,255,0.6);line-height:1.6;max-width:400px;margin:0 auto;">' +
+              'Your health insights will appear here once you log health events. ' +
+              'Use the <strong>Quick Log</strong> form on the Timeline page to add your first event.' +
+            '</p>' +
+          '</div>';
+        return;
+      }
+
+      // Compute real stats from timeline
+      var now = Date.now();
+      var WEEK = 7 * 24 * 60 * 60 * 1000;
+      var weekEvents = [];
+      var symptoms = [];
+      var medications = [];
+      var lifestyle = [];
+      var clinical = [];
+      var typeCounts = {};
+
+      for (var i = 0; i < events.length; i++) {
+        var e = events[i];
+        var t = e.eventType || '';
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+        if (t === 'Symptom') symptoms.push(e);
+        if (t === 'Medication') medications.push(e);
+        if (t === 'Lifestyle') lifestyle.push(e);
+        if (t === 'Clinical') clinical.push(e);
+        if (e.timestamp && e.timestamp.absolute) {
+          var evtTime = new Date(e.timestamp.absolute).getTime();
+          if (now - evtTime <= WEEK) weekEvents.push(e);
+        }
+      }
+
+      var html = '';
+
+      // Card 1 — Summary from real data
+      html += '<div class="glass-card insight-card">';
+      html += '<h3>Event Summary</h3>';
+      html += '<p style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin-bottom:16px;">Based on your logged health data.</p>';
+      html += '<ul>';
+      html += '<li><strong>Total Events:</strong> <div class="insight-detail">' + events.length + '</div></li>';
+      if (symptoms.length) html += '<li><strong>Symptoms:</strong> <div class="insight-detail">' + symptoms.length + ' logged</div></li>';
+      if (medications.length) html += '<li><strong>Medications:</strong> <div class="insight-detail">' + medications.length + ' logged</div></li>';
+      if (lifestyle.length) html += '<li><strong>Lifestyle:</strong> <div class="insight-detail">' + lifestyle.length + ' logged</div></li>';
+      if (clinical.length) html += '<li><strong>Clinical:</strong> <div class="insight-detail">' + clinical.length + ' logged</div></li>';
+      html += '</ul>';
+      html += '</div>';
+
+      // Card 2 — This Week (only if events exist this week)
+      if (weekEvents.length > 0) {
+        var weekSymptoms = 0, weekMeds = 0, weekLife = 0;
+        for (var w = 0; w < weekEvents.length; w++) {
+          var wt = weekEvents[w].eventType;
+          if (wt === 'Symptom') weekSymptoms++;
+          if (wt === 'Medication') weekMeds++;
+          if (wt === 'Lifestyle') weekLife++;
+        }
+        html += '<div class="glass-card insight-card">';
+        html += '<h3>This Week</h3>';
+        html += '<p style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin-bottom:16px;">Activity from the past 7 days.</p>';
+        html += '<ul>';
+        html += '<li><strong>Events This Week:</strong> <div class="insight-detail">' + weekEvents.length + '</div></li>';
+        if (weekSymptoms) html += '<li><strong>Symptoms:</strong> <div class="insight-detail">' + weekSymptoms + '</div></li>';
+        if (weekMeds) html += '<li><strong>Medications:</strong> <div class="insight-detail">' + weekMeds + '</div></li>';
+        if (weekLife) html += '<li><strong>Activities:</strong> <div class="insight-detail">' + weekLife + '</div></li>';
+        html += '</ul>';
+        html += '</div>';
+      }
+
+      // Card 3 — Recent Events (last 5)
+      var sorted = events.slice().sort(function(a, b) {
+        return new Date(b.timestamp.absolute).getTime() - new Date(a.timestamp.absolute).getTime();
+      });
+      var recent = sorted.slice(0, 5);
+      html += '<div class="glass-card insight-card">';
+      html += '<h3>Recent Events</h3>';
+      html += '<p style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin-bottom:16px;">Your most recent health log entries.</p>';
+      html += '<ul>';
+      for (var r = 0; r < recent.length; r++) {
+        var re = recent[r];
+        var desc = re.description || re.name || re.doctorVisit || '(no description)';
+        html += '<li><strong>' + escapeHtml(re.eventType) + '</strong> <div class="insight-detail">' + escapeHtml(desc) + ' — ' + formatDate(re.timestamp.absolute) + '</div></li>';
+      }
+      html += '</ul>';
+      html += '</div>';
+
+      // Card 4 — How AI Insights Work (static, informational)
+      html += '<div class="glass-card insight-card">';
+      html += '<h3>How AI Insights Work</h3>';
+      html += '<p style="color:rgba(255,255,255,0.7);line-height:1.6;">';
+      html += 'HealthIQ\'s AI analyzes your logged health events to identify patterns and correlations. ';
+      html += 'Use the AI Assistant to ask questions about your health data.';
+      html += '</p>';
+      html += '<p class="insight-disclaimer">';
+      html += '<strong>Important:</strong> AI insights are suggestions based on data patterns. ';
+      html += 'They are not medical diagnoses. Always consult with healthcare professionals for medical advice.';
+      html += '</p>';
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    window.__healthiq_renderInsights = renderInsights;
+  })();
+  </script>
+
+  <!-- DYNAMIC DASHBOARD RENDERER -->
+  <script>
+  (function() {
+    'use strict';
+
+    function escapeHtml(str) {
+      return String(str).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function badgeClass(eventType) {
+      var t = (eventType || '').toLowerCase();
+      if (t === 'symptom') return 'status-warning';
+      if (t === 'clinical') return 'status-alert';
+      return 'status-good';
+    }
+
+    function renderDashboard() {
+      var statsEl = document.getElementById('dashboardStats');
+      var activityBody = document.getElementById('dashboardActivityBody');
+      var events = (window.__healthiq_timeline || []).slice();
+
+      // Stats
+      if (statsEl) {
+        if (events.length === 0) {
+          statsEl.innerHTML =
+            '<div class="glass-card" style="text-align:center;padding:32px;">' +
+              '<p style="color:rgba(255,255,255,0.6);">No health data logged yet. Start tracking on the Timeline page.</p>' +
+            '</div>';
+        } else {
+          var now = Date.now();
+          var WEEK = 7 * 24 * 60 * 60 * 1000;
+          var weekCount = 0, symCount = 0, medCount = 0, lifeCount = 0;
+          for (var i = 0; i < events.length; i++) {
+            var e = events[i];
+            if (e.timestamp && e.timestamp.absolute && (now - new Date(e.timestamp.absolute).getTime()) <= WEEK) {
+              weekCount++;
+              if (e.eventType === 'Symptom') symCount++;
+              if (e.eventType === 'Medication') medCount++;
+              if (e.eventType === 'Lifestyle') lifeCount++;
+            }
+          }
+          statsEl.innerHTML =
+            '<div class="glass-card">' +
+              '<h3 style="color:var(--purple-400);margin-bottom:16px;">This Week</h3>' +
+              '<p><strong>Events Logged:</strong> ' + weekCount + '</p>' +
+              '<p><strong>Symptoms:</strong> ' + symCount + '</p>' +
+              '<p><strong>Medications:</strong> ' + medCount + '</p>' +
+              '<p><strong>Activities:</strong> ' + lifeCount + '</p>' +
+            '</div>' +
+            '<div class="glass-card">' +
+              '<h3 style="color:var(--purple-400);margin-bottom:16px;">Tracking Summary</h3>' +
+              '<p style="color:var(--neutral-300);line-height:1.6;">You have ' + events.length + ' total health event' + (events.length !== 1 ? 's' : '') + ' in your timeline.</p>' +
+              '<p style="color:var(--neutral-400);font-size:0.8rem;margin-top:12px;">HealthIQ does not compute health scores or medical assessments.</p>' +
+            '</div>';
+        }
+      }
+
+      // Recent Activity table
+      if (activityBody) {
+        if (events.length === 0) {
+          activityBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--neutral-400);padding:24px;">No activity yet.</td></tr>';
+        } else {
+          var sorted = events.slice().sort(function(a, b) {
+            return new Date(b.timestamp.absolute).getTime() - new Date(a.timestamp.absolute).getTime();
+          });
+          var recent = sorted.slice(0, 10);
+          var html = '';
+          for (var j = 0; j < recent.length; j++) {
+            var ev = recent[j];
+            var desc = ev.description || ev.name || ev.doctorVisit || '(no description)';
+            html +=
+              '<tr>' +
+                '<td>' + formatDate(ev.timestamp.absolute) + '</td>' +
+                '<td>' + escapeHtml(desc) + '</td>' +
+                '<td><span class="status-badge ' + badgeClass(ev.eventType) + '">' + escapeHtml(ev.eventType) + '</span></td>' +
+              '</tr>';
+          }
+          activityBody.innerHTML = html;
+        }
+      }
+    }
+
+    window.__healthiq_renderDashboard = renderDashboard;
+  })();
+  </script>
+
+  <!-- CLEAR ALL HEALTH DATA + MODAL LOGIC -->
+  <script>
+  (function() {
+    'use strict';
+
+    // All HealthIQ localStorage keys that store user health data.
+    var HEALTH_DATA_KEYS = [
+      'healthiq_chat_history_v1',
+      'healthiq_data_version'
+    ];
+
+    // Also dynamically find any healthiq_* keys
+    // PRIVACY: healthiq_device_user_id is EXCLUDED — it is device identity, not health data.
+    var DEVICE_ID_KEY = 'healthiq_device_user_id';
+
+    function getAllHealthIQKeys() {
+      var keys = HEALTH_DATA_KEYS.slice();
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k !== DEVICE_ID_KEY && (k.indexOf('healthiq') !== -1 || k.indexOf('HealthIQ') !== -1)) {
+            if (keys.indexOf(k) === -1) keys.push(k);
+          }
+        }
+      } catch (_) {}
+      return keys;
+    }
+
+    function clearAllHealthData() {
+      // 1. Clear in-memory timeline
+      if (window.__healthiq_clearTimeline) {
+        window.__healthiq_clearTimeline();
+      }
+      // Also wipe the array reference directly
+      if (window.__healthiq_timeline) {
+        window.__healthiq_timeline.length = 0;
+      }
+
+      // 2. Clear chat storage
+      if (window.HealthIQChatStorage && window.HealthIQChatStorage.clearMessages) {
+        window.HealthIQChatStorage.clearMessages();
+      }
+
+      // 3. Clear ALL HealthIQ localStorage keys
+      var keys = getAllHealthIQKeys();
+      for (var i = 0; i < keys.length; i++) {
+        try { localStorage.removeItem(keys[i]); } catch (_) {}
+      }
+
+      // 4. Verify deletion (exclude device identity key)
+      var leftover = [];
+      try {
+        for (var j = 0; j < localStorage.length; j++) {
+          var k = localStorage.key(j);
+          if (k && k !== DEVICE_ID_KEY && (k.indexOf('healthiq') !== -1 || k.indexOf('HealthIQ') !== -1)) {
+            leftover.push(k);
+          }
+        }
+      } catch (_) {}
+
+      if (leftover.length > 0) {
+        console.error('[HealthIQ] DELETION VERIFICATION FAILED — leftover keys:', leftover);
+        // Force remove again
+        for (var l = 0; l < leftover.length; l++) {
+          try { localStorage.removeItem(leftover[l]); } catch (_) {}
+        }
+      }
+
+      // Verify in-memory state
+      if (window.__healthiq_timeline && window.__healthiq_timeline.length > 0) {
+        console.error('[HealthIQ] DELETION VERIFICATION FAILED — in-memory timeline not empty:', window.__healthiq_timeline.length);
+        window.__healthiq_timeline.length = 0;
+      }
+
+      var chatCount = 0;
+      try { chatCount = window.HealthIQChatStorage.getMessageCount(); } catch (_) {}
+      if (chatCount > 0) {
+        console.error('[HealthIQ] DELETION VERIFICATION FAILED — chat messages remain:', chatCount);
+      }
+
+      console.log('[HealthIQ] All health data permanently deleted. Verification passed.');
+
+      // 6. Set session flag to prevent backend re-sync
+      window.__healthiq_dataCleared = true;
+
+      // 7. Re-render all views to show empty state
+      if (window.__healthiq_renderTimeline) window.__healthiq_renderTimeline();
+      if (window.__healthiq_renderInsights) window.__healthiq_renderInsights();
+      if (window.__healthiq_renderDashboard) window.__healthiq_renderDashboard();
+
+      // Re-render chat (clear DOM)
+      var chatHistory = document.getElementById('chatHistory');
+      if (chatHistory) {
+        while (chatHistory.firstChild) chatHistory.removeChild(chatHistory.firstChild);
+        // Show empty state
+        var emptyEl = document.createElement('div');
+        emptyEl.className = 'chat-empty';
+        emptyEl.innerHTML =
+          '<div class="chat-empty-icon">&#129302;</div>' +
+          '<h2>HealthIQ AI</h2>' +
+          '<p>Ask questions about your health data. I can help identify patterns, summarize your timeline, and provide general wellness context.</p>' +
+          '<p class="chat-empty-hint">I am not a medical professional. My responses are informational only.</p>';
+        chatHistory.appendChild(emptyEl);
+      }
+
+      return true;
+    }
+
+    // Expose globally
+    window.__healthiq_clearAllData = clearAllHealthData;
+
+    // Toast notification
+    function showToast(message) {
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#06d6a0;color:#000;padding:14px 28px;border-radius:12px;font-weight:600;font-size:0.95rem;z-index:99999;box-shadow:0 4px 20px rgba(6,214,160,0.3);transition:opacity 0.5s ease;';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        setTimeout(function() { toast.remove(); }, 500);
+      }, 3000);
+    }
+
+    // Modal wiring
+    document.addEventListener('DOMContentLoaded', function() {
+      var openBtn = document.getElementById('clearAllDataBtn');
+      var overlay = document.getElementById('clearDataModalOverlay');
+      var cancelBtn = document.getElementById('clearDataCancel');
+      var confirmBtn = document.getElementById('clearDataConfirm');
+
+      if (!openBtn || !overlay) return;
+
+      openBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        overlay.style.display = 'flex';
+      });
+
+      cancelBtn && cancelBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        overlay.style.display = 'none';
+      });
+
+      confirmBtn && confirmBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        overlay.style.display = 'none';
+        clearAllHealthData();
+        showToast('All health data permanently deleted.');
+      });
+
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.style.display = 'none';
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.style.display === 'flex') {
+          overlay.style.display = 'none';
+        }
+      });
+    });
+  })();
+  </script>
+
+  <!-- CHAT UI CONTROLLER (inlined from scripts/chat-ui.js) -->
+  <script>
+/* ==========================================================
+   HEALTHIQ — CHAT UI CONTROLLER
+   Depends on: HealthIQChatStorage (above)
+   ========================================================== */
+(function () {
+  'use strict';
+
+  var chatPill      = document.getElementById('chatPill');
+  var chatHistory   = document.getElementById('chatHistory');
+  var chatInput     = document.getElementById('aiChatInput');
+  var sendBtn       = document.getElementById('aiChatSend');
+  var clearBtn      = document.getElementById('chatClearBtn');
+  var demoNotice    = document.getElementById('chatDemoNotice');
+  var modalOverlay  = document.getElementById('chatModalOverlay');
+  var modalCancel   = document.getElementById('chatModalCancel');
+  var modalConfirm  = document.getElementById('chatModalConfirm');
+
+  if (!chatHistory || !chatInput || !sendBtn) return;
+
+  var Storage = window.HealthIQChatStorage;
+  if (!Storage) {
+    console.error('[HealthIQ] chat-storage.js must load before chat-ui.js');
+    return;
+  }
+
+  var sending = false;
+  var typingEl = null;
+  var activated = false;
+
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     Lightweight Markdown → HTML
+     XSS-safe: escapes HTML entities first, then applies patterns.
+     Block-level aware: paragraphs, lists, headers, code blocks.
+     ────────────────────────────────────────────────────────── */
+  function parseMarkdown(raw) {
+    if (!raw) return '';
+    var s = escapeHtml(raw);
+
+    // ── Fenced code blocks (must be first) ──
+    s = s.replace(/```([\s\S]*?)```/g, function(_, code) {
+      return '\n<pre><code>' + code.trim() + '</code></pre>\n';
+    });
+    // ── Inline code ──
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // ── Bold **text** ──
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // ── Italic *text* (negative lookbehind/ahead for word chars and *) ──
+    s = s.replace(/(?<![\w*])\*([^*]+?)\*(?![\w*])/g, '<em>$1</em>');
+
+    // ── Split into lines for block-level processing ──
+    var lines = s.split('\n');
+    var blocks = [];
+    var i = 0;
+
+    while (i < lines.length) {
+      var line = lines[i];
+      var trimmed = line.trim();
+
+      // Skip empty lines (they become paragraph breaks)
+      if (trimmed === '') { i++; continue; }
+
+      // ── Pre blocks (passed through) ──
+      if (trimmed.indexOf('<pre>') !== -1) {
+        var preBlock = '';
+        while (i < lines.length) {
+          preBlock += lines[i] + '\n';
+          if (lines[i].indexOf('</pre>') !== -1) { i++; break; }
+          i++;
+        }
+        blocks.push(preBlock.trim());
+        continue;
+      }
+
+      // ── Headers ──
+      var hMatch;
+      if ((hMatch = trimmed.match(/^###\s+(.+)$/))) {
+        blocks.push('<h4>' + hMatch[1] + '</h4>');
+        i++; continue;
+      }
+      if ((hMatch = trimmed.match(/^##\s+(.+)$/))) {
+        blocks.push('<h3>' + hMatch[1] + '</h3>');
+        i++; continue;
+      }
+      if ((hMatch = trimmed.match(/^#\s+(.+)$/))) {
+        blocks.push('<h3>' + hMatch[1] + '</h3>');
+        i++; continue;
+      }
+
+      // ── Unordered list (lines starting with - or * ) ──
+      if (/^[\-\*]\s+/.test(trimmed)) {
+        var ulItems = [];
+        while (i < lines.length && /^[\-\*]\s+/.test(lines[i].trim())) {
+          ulItems.push(lines[i].trim().replace(/^[\-\*]\s+/, ''));
+          i++;
+        }
+        var ulHtml = '<ul>';
+        for (var u = 0; u < ulItems.length; u++) {
+          ulHtml += '<li>' + ulItems[u] + '</li>';
+        }
+        ulHtml += '</ul>';
+        blocks.push(ulHtml);
+        continue;
+      }
+
+      // ── Ordered list (lines starting with digits. ) ──
+      if (/^\d+\.\s+/.test(trimmed)) {
+        var olItems = [];
+        while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+          olItems.push(lines[i].trim().replace(/^\d+\.\s+/, ''));
+          i++;
+        }
+        var olHtml = '<ol>';
+        for (var o = 0; o < olItems.length; o++) {
+          olHtml += '<li>' + olItems[o] + '</li>';
+        }
+        olHtml += '</ol>';
+        blocks.push(olHtml);
+        continue;
+      }
+
+      // ── Paragraph: collect consecutive non-special lines ──
+      var para = [];
+      while (i < lines.length) {
+        var pl = lines[i].trim();
+        if (pl === '' ||
+            /^[\-\*]\s+/.test(pl) ||
+            /^\d+\.\s+/.test(pl) ||
+            /^#{1,4}\s+/.test(pl) ||
+            pl.indexOf('<pre>') !== -1) {
+          break;
+        }
+        para.push(pl);
+        i++;
+      }
+      if (para.length) {
+        blocks.push('<p>' + para.join('<br>') + '</p>');
+      }
+    }
+
+    return blocks.join('\n');
+  }
+
+  function isNearBottom() {
+    var threshold = 100;
+    return (chatHistory.scrollHeight - chatHistory.scrollTop - chatHistory.clientHeight) < threshold;
+  }
+
+  var _scrollPending = false;
+  function scrollToBottom(force) {
+    if (!force && !isNearBottom()) return;
+    if (_scrollPending) return;
+    _scrollPending = true;
+    requestAnimationFrame(function () {
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+      _scrollPending = false;
+    });
+  }
+
+  function setInputEnabled(enabled) {
+    sending = !enabled;
+    sendBtn.disabled = !enabled;
+    chatInput.disabled = !enabled;
+    sendBtn.textContent = enabled ? 'Send' : '...';
+    if (enabled && !document.documentElement.classList.contains('is-mobile')) {
+      chatInput.focus();
+    }
+  }
+
+  function activatePill() {
+    if (!activated && chatPill) {
+      chatPill.classList.add('chat-active');
+      activated = true;
+    }
+  }
+
+  function renderEmptyState() {
+    var el = document.createElement('div');
+    el.className = 'chat-empty';
+    el.innerHTML =
+      '<div class="chat-empty-icon">&#129302;</div>' +
+      '<h2>HealthIQ AI</h2>' +
+      '<p>Ask questions about your health data. I can help identify patterns, summarize your timeline, and provide general wellness context.</p>' +
+      '<p class="chat-empty-hint">I am not a medical professional. My responses are informational only.</p>';
+    return el;
+  }
+
+  function clearChatHistory() {
+    while (chatHistory.firstChild) {
+      chatHistory.removeChild(chatHistory.firstChild);
+    }
+    typingEl = null;
+  }
+
+  function showEmptyIfNeeded() {
+    var msgs = chatHistory.querySelectorAll('.chat-msg');
+    if (msgs.length === 0 && !chatHistory.querySelector('.chat-empty')) {
+      chatHistory.appendChild(renderEmptyState());
+    }
+  }
+
+  function removeEmptyState() {
+    var empty = chatHistory.querySelector('.chat-empty');
+    if (empty) empty.remove();
+  }
+
+  function addMessageDOM(role, text, options) {
+    options = options || {};
+    removeEmptyState();
+
+    var div = document.createElement('div');
+    div.className = 'chat-msg ' + (role === 'user' ? 'user' : 'ai');
+    if (options.restored) div.classList.add('restored');
+
+    var labelText = role === 'user' ? 'You' : 'HealthIQ AI';
+    var bubbleClass = 'chat-bubble';
+    if (options.error) bubbleClass += ' error-bubble';
+    if (options.demo) bubbleClass += ' demo-bubble';
+
+    var contentHtml = (role === 'user' || options.error) ? escapeHtml(text) : parseMarkdown(text);
+
+    var html = '<div class="chat-label">' + escapeHtml(labelText) + '</div>';
+    html += '<div class="' + bubbleClass + '">' + contentHtml;
+
+    if (options.disclaimer) {
+      html += '<span class="chat-disclaimer-inline">' + escapeHtml(options.disclaimer) + '</span>';
+    }
+
+    html += '</div>';
+    div.innerHTML = html;
+
+    chatHistory.appendChild(div);
+    scrollToBottom(options.forceScroll);
+    pruneDOM();
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     Typing animation — character-by-character via rAF
+     1. Creates bubble with empty text
+     2. Appends raw characters one-by-one using textContent
+     3. After completion, swaps to parsed Markdown innerHTML
+     4. Scroll is debounced (every ~8 frames)
+     ────────────────────────────────────────────────────────── */
+  function typeMessageAnimated(text, options, callback) {
+    options = options || {};
+    removeEmptyState();
+
+    var div = document.createElement('div');
+    div.className = 'chat-msg ai';
+    if (options.demo) div.classList.add('demo');
+
+    var bubbleClass = 'chat-bubble';
+    if (options.demo) bubbleClass += ' demo-bubble';
+
+    var label = document.createElement('div');
+    label.className = 'chat-label';
+    label.textContent = 'HealthIQ AI';
+    div.appendChild(label);
+
+    var bubble = document.createElement('div');
+    bubble.className = bubbleClass;
+    div.appendChild(bubble);
+
+    chatHistory.appendChild(div);
+    scrollToBottom(true);
+
+    function finalize() {
+      bubble.innerHTML = parseMarkdown(text);
+      if (options.disclaimer) {
+        bubble.innerHTML += '<span class="chat-disclaimer-inline">' + escapeHtml(options.disclaimer) + '</span>';
+      }
+      scrollToBottom(true);
+      pruneDOM();
+      if (callback) callback();
+    }
+
+    // Respect prefers-reduced-motion
+    var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      finalize();
+      return;
+    }
+
+    // Character-by-character animation via requestAnimationFrame
+    var charIdx = 0;
+    var len = text.length;
+    var frameCount = 0;
+    var scrollEvery = 8;  // debounce scroll to every 8 frames
+    // Speed: ~2 chars per frame at 60fps ≈ 120 chars/sec
+    var charsPerFrame = Math.max(1, Math.ceil(len / (len < 200 ? 120 : 200)));
+    // Cap at 3 to keep it smooth for long texts
+    if (charsPerFrame > 3) charsPerFrame = 3;
+
+    // Use a text node for zero-layout-thrash appending
+    var textNode = document.createTextNode('');
+    bubble.appendChild(textNode);
+
+    function step() {
+      if (charIdx >= len) {
+        finalize();
+        return;
+      }
+
+      // Append next chunk of characters
+      var end = Math.min(charIdx + charsPerFrame, len);
+      textNode.nodeValue = text.substring(0, end);
+      charIdx = end;
+      frameCount++;
+
+      // Debounced scroll
+      if (frameCount % scrollEvery === 0) {
+        scrollToBottom(false);
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function pruneDOM() {
+    var msgs = chatHistory.querySelectorAll('.chat-msg');
+    if (msgs.length > Storage.MAX_MESSAGES) {
+      var toRemove = msgs.length - Storage.MAX_MESSAGES;
+      for (var i = 0; i < toRemove; i++) {
+        msgs[i].remove();
+      }
+    }
+  }
+
+  function showTyping() {
+    if (typingEl) return;
+    removeEmptyState();
+
+    typingEl = document.createElement('div');
+    typingEl.className = 'chat-typing-wrap';
+    typingEl.id = 'chatTypingIndicator';
+    typingEl.innerHTML =
+      '<div class="chat-label">HealthIQ AI</div>' +
+      '<div class="chat-typing-bubble"><span></span><span></span><span></span></div>';
+    chatHistory.appendChild(typingEl);
+    scrollToBottom(true);
+  }
+
+  function hideTyping() {
+    if (typingEl) {
+      typingEl.remove();
+      typingEl = null;
+    }
+  }
+
+  function restoreChat() {
+    var messages = Storage.getMessages();
+    if (messages.length === 0) {
+      showEmptyIfNeeded();
+      return;
+    }
+
+    for (var i = 0; i < messages.length; i++) {
+      var m = messages[i];
+      addMessageDOM(m.role, m.content, {
+        restored: true,
+        demo: m.demoMode,
+      });
+    }
+
+    requestAnimationFrame(function () {
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    });
+
+    activatePill();
+  }
+
+  function doSend() {
+    var query = chatInput.value.trim();
+    if (!query) return;
+    if (sending) return;
+
+    activatePill();
+
+    var apiUrl = window.__HEALTHIQ_API;
+    if (!apiUrl || window.__healthiq_apiStatus !== 'connected') {
+      addMessageDOM('assistant', 'Cannot reach the HealthIQ server. Please try again shortly.', { error: true, forceScroll: true });
+      Storage.addMessage('assistant', 'Cannot reach the HealthIQ server. Please try again shortly.', false);
+      return;
+    }
+
+    addMessageDOM('user', query, { forceScroll: true });
+    Storage.addMessage('user', query, false);
+
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    setInputEnabled(false);
+    showTyping();
+
+    var timedOut = false;
+    var timeoutId = setTimeout(function () {
+      timedOut = true;
+      hideTyping();
+      var errMsg = 'Request timed out after 30 seconds. The AI service may be slow or unreachable.';
+      addMessageDOM('assistant', errMsg, { error: true, forceScroll: true });
+      Storage.addMessage('assistant', errMsg, false);
+      setInputEnabled(true);
+    }, 30000);
+
+    fetch(apiUrl + '/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: window.__healthiq_deviceUserId || 'anonymous', message: query }),
+    })
+    .then(function (r) {
+      if (!r.ok) throw new Error('Server returned ' + r.status);
+      return r.text();
+    })
+    .then(function (text) {
+      if (timedOut) return;
+      clearTimeout(timeoutId);
+      hideTyping();
+
+      var data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        var parseErr = 'Received invalid response from server.';
+        addMessageDOM('assistant', parseErr, { error: true, forceScroll: true });
+        Storage.addMessage('assistant', parseErr, false);
+        setInputEnabled(true);
+        return;
+      }
+
+      if (data.error) {
+        addMessageDOM('assistant', data.error, { error: true, forceScroll: true });
+        Storage.addMessage('assistant', data.error, false);
+        setInputEnabled(true);
+        return;
+      }
+
+      var isDemo = data.DEMO_FALLBACK === true ||
+        (typeof data.reply === 'string' && data.reply.indexOf('(Demo)') === 0);
+
+      if (isDemo && demoNotice) {
+        demoNotice.style.display = 'block';
+      }
+
+      var reply = data.reply || 'No response received.';
+      Storage.addMessage('assistant', reply, isDemo);
+
+      // Animate the reply word-by-word, then enable input
+      typeMessageAnimated(reply, {
+        demo: isDemo,
+        disclaimer: data.disclaimer || null,
+      }, function () {
+        setInputEnabled(true);
+      });
+    })
+    .catch(function (err) {
+      if (timedOut) return;
+      clearTimeout(timeoutId);
+      hideTyping();
+      var catchErr = 'Failed to reach AI: ' + (err.message || 'Unknown error');
+      addMessageDOM('assistant', catchErr, { error: true, forceScroll: true });
+      Storage.addMessage('assistant', catchErr, false);
+      setInputEnabled(true);
+    });
+  }
+
+  function openModal() {
+    if (modalOverlay) {
+      modalOverlay.style.display = 'flex';
+    }
+  }
+
+  function closeModal() {
+    if (modalOverlay) {
+      modalOverlay.style.display = 'none';
+    }
+  }
+
+  function confirmClear() {
+    closeModal();
+    Storage.clearMessages();
+    clearChatHistory();
+    showEmptyIfNeeded();
+
+    if (demoNotice) demoNotice.style.display = 'none';
+
+    if (chatPill) chatPill.classList.remove('chat-active');
+    activated = false;
+  }
+
+  chatInput.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 130) + 'px';
+  });
+
+  var inputBar = document.getElementById('chatInputBar');
+  if (inputBar) {
+    chatInput.addEventListener('focus', function () {
+      inputBar.classList.add('input-focused');
+    });
+    chatInput.addEventListener('blur', function () {
+      inputBar.classList.remove('input-focused');
+    });
+  }
+
+  sendBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    doSend();
+  });
+
+  chatInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      doSend();
+    }
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (Storage.getMessageCount() > 0) {
+        openModal();
+      }
+    });
+  }
+
+  if (modalCancel) {
+    modalCancel.addEventListener('click', function (e) {
+      e.preventDefault();
+      closeModal();
+    });
+  }
+
+  if (modalConfirm) {
+    modalConfirm.addEventListener('click', function (e) {
+      e.preventDefault();
+      confirmClear();
+    });
+  }
+
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', function (e) {
+      if (e.target === modalOverlay) closeModal();
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modalOverlay && modalOverlay.style.display === 'flex') {
+      closeModal();
+    }
+  });
+
+  restoreChat();
+})();
+  </script>
+
+  <!-- LIQUID PILL CONTROLLER (inlined from scripts/liquid-pill.js) -->
+  <script>
+(function () {
+  'use strict';
+
+  const pills = document.querySelectorAll('.liquid-pill');
+  if (!pills.length) return;
+
+  pills.forEach(function(pill) {
+    initPillController(pill);
+  });
+
+  function initPillController(pill) {
+    const viewport = pill.querySelector('.lp-viewport');
+    const track = pill.querySelector('[data-track]');
+    const modeButtons = Array.from(pill.querySelectorAll('.lp-micro-pill[data-mode]'));
+    const panels = Array.from(pill.querySelectorAll('.lp-state'));
+
+    if (!viewport || !track) return;
+
+    const cfg = {
+      collapsedVh: 26, expandedVh: 60,
+      collapsedScale: 0.98, expandedScale: 1.0,
+      collapsedRadius: 34, expandedRadius: 22,
+      boundaryThreshold: 1.0, pressureGain: 0.003,
+      maxNudgePx: 14, lerpRate: 0.14,
+    };
+
+    let expanded = false, internalScrollActive = false;
+    let visualExpand = 0, targetExpand = 0;
+    let visualIndex = 0, targetIndex = 0;
+    let pressure = 0, pressureDir = 0, nudgePx = 0;
+    let animating = false;
+
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function setCssVar(name, value) { pill.style.setProperty(name, value); }
+
+    function activeIndex() {
+      return clamp(Math.round(visualIndex), 0, panels.length - 1);
+    }
+
+    function getActivePanelEl() { return panels[activeIndex()] || null; }
+
+    function updateActivePanelFlags() {
+      const idx = activeIndex();
+      for (let i = 0; i < panels.length; i++) {
+        panels[i].setAttribute('data-active', i === idx ? 'true' : 'false');
+      }
+    }
+
+    function applyMotionToDom() {
+      const hVh = lerp(cfg.collapsedVh, cfg.expandedVh, visualExpand);
+      const scale = lerp(cfg.collapsedScale, cfg.expandedScale, visualExpand);
+      const radius = lerp(cfg.collapsedRadius, cfg.expandedRadius, visualExpand);
+
+      setCssVar('--lp-h', hVh.toFixed(2) + 'vh');
+      setCssVar('--lp-scale', scale.toFixed(4));
+      setCssVar('--lp-radius', radius.toFixed(2) + 'px');
+      setCssVar('--lp-track-index', String(visualIndex));
+      setCssVar('--lp-track-nudge', nudgePx.toFixed(2) + 'px');
+
+      pill.setAttribute('data-expanded', expanded ? 'true' : 'false');
+      pill.setAttribute('data-internal-scroll', internalScrollActive ? 'true' : 'false');
+      updateActivePanelFlags();
+    }
+
+    function settlePressure() {
+      pressure = lerp(pressure, 0, 0.18);
+      if (Math.abs(pressure) < 0.001) pressure = 0;
+      nudgePx = lerp(nudgePx, 0, 0.22);
+      if (Math.abs(nudgePx) < 0.05) nudgePx = 0;
+    }
+
+    function startAnimation() {
+      if (!animating) { animating = true; requestAnimationFrame(tick); }
+    }
+
+    function onClick(ev) {
+      var t = ev.target;
+      if (t && t.closest) {
+        if (t.closest('.lp-footer') || t.closest('.lp-chat-input')) return;
+      }
+      expanded = !expanded;
+      targetExpand = expanded ? 1 : 0;
+      if (!expanded) internalScrollActive = false;
+      startAnimation();
+    }
+
+    function isScrollable(el) {
+      if (!el) return false;
+      return el.scrollHeight > el.clientHeight + 1;
+    }
+
+    function canScrollFurther(el, deltaY) {
+      if (!el || !isScrollable(el)) return false;
+      var top = el.scrollTop;
+      var max = el.scrollHeight - el.clientHeight;
+      if (deltaY > 0) return top < max - 1;
+      if (deltaY < 0) return top > 1;
+      return false;
+    }
+
+    function attemptBoundaryCross(dir, deltaY) {
+      if (dir !== pressureDir) { pressureDir = dir; pressure = 0; }
+      pressure = clamp(pressure + Math.abs(deltaY) * cfg.pressureGain, 0, 1.35);
+      var sign = dir > 0 ? -1 : 1;
+      nudgePx = sign * cfg.maxNudgePx * Math.min(1, pressure);
+      if (pressure >= cfg.boundaryThreshold) {
+        var maxIndex = panels.length - 1;
+        var next = clamp(targetIndex + dir, 0, maxIndex);
+        if (next !== targetIndex) targetIndex = next;
+        pressure = 0; pressureDir = 0; nudgePx = 0;
+      }
+      startAnimation();
+    }
+
+    function onWheel(ev) {
+      var deltaY = ev.deltaY;
+      internalScrollActive = expanded && visualExpand >= 0.98;
+      var activeEl = getActivePanelEl();
+      if (internalScrollActive && canScrollFurther(activeEl, deltaY)) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (deltaY > 0) attemptBoundaryCross(+1, deltaY);
+      else if (deltaY < 0) attemptBoundaryCross(-1, deltaY);
+    }
+
+    function onModeClick(ev) {
+      var btn = ev.currentTarget;
+      var nextMode = btn.getAttribute('data-mode');
+      for (var i = 0; i < modeButtons.length; i++) {
+        var b = modeButtons[i];
+        b.setAttribute('aria-pressed', b.getAttribute('data-mode') === nextMode ? 'true' : 'false');
+      }
+      var modeMap = { 'insights': 0, 'events': 0, 'summary': 1, 'earlier': 1, 'trends': 2, 'recent': 2 };
+      if (modeMap[nextMode] !== undefined) { targetIndex = modeMap[nextMode]; startAnimation(); }
+    }
+
+    function tick() {
+      visualExpand = lerp(visualExpand, targetExpand, cfg.lerpRate);
+      visualIndex = lerp(visualIndex, targetIndex, cfg.lerpRate);
+      if (Math.abs(visualExpand - targetExpand) < 0.002) visualExpand = targetExpand;
+      if (Math.abs(visualIndex - targetIndex) < 0.002) visualIndex = targetIndex;
+      settlePressure();
+      applyMotionToDom();
+      var stillAnimating =
+        Math.abs(visualExpand - targetExpand) > 0.001 ||
+        Math.abs(visualIndex - targetIndex) > 0.001 ||
+        Math.abs(pressure) > 0.001 ||
+        Math.abs(nudgePx) > 0.01;
+      if (stillAnimating) requestAnimationFrame(tick);
+      else animating = false;
+    }
+
+    pill.addEventListener('click', onClick);
+    viewport.addEventListener('wheel', onWheel, { passive: false });
+    for (var i = 0; i < modeButtons.length; i++) {
+      modeButtons[i].addEventListener('click', onModeClick);
+    }
+    applyMotionToDom();
+  }
+})();
+  </script>
+
+  <!-- TIMELINE ADAPTER (inlined from scripts/timeline-adapter.js) -->
+  <script>
+(function () {
+  const DAY = 24 * 60 * 60 * 1000;
+  function iso(ms) { return new Date(ms).toISOString(); }
+  function nowMs() { return Date.now(); }
+  function ms(isoString) { const v = Date.parse(isoString); return Number.isFinite(v) ? v : 0; }
+  function clone(value) {
+    if (typeof globalThis.structuredClone === "function") return globalThis.structuredClone(value);
+    return JSON.parse(JSON.stringify(value));
+  }
+  function assertNonEmptyArray(arr, label) {
+    if (!Array.isArray(arr) || arr.length < 1) throw new Error(label + " must be a non-empty array.");
+  }
+
+  function createInMemoryTimeline() {
+    const events = [];
+    const ids = new Set();
+    function appendEvent(e) {
+      if (!e || typeof e !== "object") throw new Error("event must be an object");
+      if (!e.id || typeof e.id !== "string") throw new Error("event.id must be a string");
+      if (ids.has(e.id)) throw new Error("duplicate event id (append-only violation): " + e.id);
+      if (e.eventType === "Insight") {
+        if (e.reviewStatus !== "reviewed") throw new Error("cannot persist InsightEvent unless reviewStatus is reviewed");
+        assertNonEmptyArray(e.evidenceEventIds, "InsightEvent.evidenceEventIds");
+      }
+      ids.add(e.id);
+      events.push(clone(e));
+    }
+    function getAllEvents() { return clone(events); }
+    return { appendEvent, getAllEvents };
+  }
+
+  const base = nowMs();
+  const timeline = createInMemoryTimeline();
+
+  const persistedEvents = [
+    { id: "evt-med-1", eventType: "Medication", timestamp: { absolute: iso(base - 3 * DAY) }, source: "prescription", confidence: "high", visibilityScope: "user-only", name: "Metformin", dosage: "500mg", intendedSchedule: "twice daily", adherenceOutcome: "taken" },
+    { id: "evt-sym-1", eventType: "Symptom", timestamp: { absolute: iso(base - 2 * DAY) }, source: "user", confidence: "medium", visibilityScope: "user-only", description: "Headache", intensity: "moderate", userReportedContext: "poor sleep; high stress", duration: { kind: "reported", value: "about 3 hours" } },
+    { id: "evt-life-1", eventType: "Lifestyle", timestamp: { absolute: iso(base - 10 * DAY) }, source: "user", confidence: "low", visibilityScope: "user-only", sleep: "~5h", stress: "high", activity: "low", food: "irregular meals" },
+    { id: "evt-clin-1", eventType: "Clinical", timestamp: { absolute: iso(base - 40 * DAY) }, source: "doctor", confidence: "high", visibilityScope: "doctor-shareable", doctorVisit: "follow-up appointment", diagnosisLabel: "(provided by clinician)" },
+    { id: "evt-ins-reviewed-1", eventType: "Insight", timestamp: { absolute: iso(base - 12 * DAY) }, source: "user", confidence: "high", visibilityScope: "user-only", evidenceEventIds: ["evt-life-1"], reviewStatus: "reviewed", metadata: { createdBy: "ai" }, notes: "Reviewed: sleep/stress signals appear elevated during this period." },
+  ];
+
+  for (const e of persistedEvents) timeline.appendEvent(e);
+
+  const draftInsights = [
+    { id: "draft-ins-1", eventType: "Insight", timestamp: { absolute: iso(base - 2 * DAY) }, source: "user", confidence: "medium", visibilityScope: "user-only", evidenceEventIds: ["evt-sym-1", "evt-med-1"], reviewStatus: "draft", metadata: { createdBy: "ai" }, notes: "Draft: headache may co-occur with low sleep / high stress context." },
+  ];
+
+  function buildSlices(allEvents, draft) {
+    const now = nowMs();
+    const defs = [
+      { id: "older", label: "Older (31+ days)", startMs: 0, endMs: now - 31 * DAY },
+      { id: "earlier", label: "Earlier (8-30 days)", startMs: now - 30 * DAY, endMs: now - 8 * DAY },
+      { id: "recent", label: "Recent (7 days)", startMs: now - 7 * DAY, endMs: now },
+    ];
+    const slices = [];
+    for (const d of defs) {
+      const eventsIn = [];
+      const insightsIn = [];
+      for (const e of allEvents) {
+        const t = ms(e.timestamp.absolute);
+        if (t >= d.startMs && t <= d.endMs) {
+          if (e.eventType === "Insight") insightsIn.push(e);
+          else eventsIn.push(e);
+        }
+      }
+      for (const i of draft) {
+        const t = ms(i.timestamp.absolute);
+        if (t >= d.startMs && t <= d.endMs) insightsIn.push(i);
+      }
+      slices.push({ id: d.id, timeRangeLabel: d.label, events: clone(eventsIn), insights: clone(insightsIn) });
+    }
+    return slices;
+  }
+
+  function getTimelineSlices() {
+    return buildSlices(timeline.getAllEvents(), draftInsights);
+  }
+
+  function getSliceByIndex(i) {
+    const slices = getTimelineSlices();
+    if (!Number.isFinite(i)) return slices[0];
+    const idx = Math.max(0, Math.min(slices.length - 1, Math.floor(i)));
+    return slices[idx];
+  }
+
+  window.HealthIQTimelineAdapter = { getTimelineSlices, getSliceByIndex };
+})();
+  </script>
+</body>
+</html>

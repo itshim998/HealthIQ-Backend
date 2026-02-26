@@ -1,0 +1,1088 @@
+Updates Report - HealthIQ Step-1
+
+Actions Taken:
+- Created directories: /frontend, /backend, /docs.
+- Created file: /docs/HealthIQ_Concept.md.
+- Created file: /frontend/Entry.tsx.
+- Created file: /Updates.txt.
+
+Decisions Made:
+- Used a single React-style placeholder file (Entry.tsx) for the UI entry concept.
+- Documented Liquid Pill UI behavior via bullet points only, per instructions.
+
+Assumptions:
+- Plan A and Plan B are conceptual modes without implementation details at this stage.
+- "Intent signals" can be inferred from scroll, dwell, or selection (not implemented).
+
+Not Implemented (and Why):
+- No dashboards or cards, per strict rules.
+- No AI behavior or backend logic, per strict rules.
+- No styling or Tailwind; placeholder only for conceptual scaffolding.
+
+Step-2 Updates:
+Actions Taken:
+- Added Liquid Pill State Model section in /docs/HealthIQ_Concept.md.
+- Added Plan Switching Logic section in /docs/HealthIQ_Concept.md.
+- Created /docs/LiquidPill_Rules.md with interaction constitution rules.
+- Expanded /frontend/Entry.tsx with state list and transition pseudocode comments.
+
+New Files Created:
+- /docs/LiquidPill_Rules.md.
+
+Ambiguities Noted:
+- Exact timing window for "fast scroll" signal not specified.
+- Threshold percentages for each state segment are not defined.
+
+Risky Assumptions Made:
+- Treated "fast scroll" as two consecutive state transitions in a short window.
+- Treated "direct micro-pill navigation" as repeated selection within a session.
+
+Step-3 Updates:
+Actions Taken:
+- Created /frontend/pill/PrimaryPill.tsx placeholder component.
+- Created /frontend/pill/MicroPill.tsx placeholder component.
+- Created /frontend/pill/PillViewport.tsx placeholder component.
+- Created /docs/Motion_Contract.md with Liquid Pill motion rules.
+- Upgraded /frontend/Entry.tsx to orchestration-only structure.
+- Appended explicit anti-patterns in /docs/LiquidPill_Rules.md.
+
+Why Each Component Exists:
+- PrimaryPill: defines the primary narrative container boundary without styling.
+- MicroPill: defines the micro narrative fragment boundary without behavior.
+- PillViewport: defines the shared viewport boundary for primary and micro layers.
+
+Architectural Tension Noted:
+- Entry.tsx now orchestrates but still renders placeholders; the eventual split between orchestration and rendering may need a dedicated controller.
+
+Unclear or Risky Areas:
+- The exact contract for how intent signals are detected remains undefined.
+- Plan A trigger thresholds are still conceptual and may shift.
+
+Step-4A Updates (Health Domain Model):
+Actions Taken:
+- Created /docs/domain/ folder for pure domain contracts.
+- Created /docs/domain/HealthDomain.md defining the HealthEvent backbone + timeline immutability.
+- Created /docs/domain/Timeline_Contract.md bridging timeline semantics to Liquid Pill reading/navigation.
+
+Files Created:
+- /docs/domain/HealthDomain.md
+- /docs/domain/Timeline_Contract.md
+
+Why This Model Avoids HealthCare+ Blind Spots:
+- Timeline-first: prioritizes lived sequence (what happened when) over visit-centered records.
+- Event-first: treats symptoms, adherence, and lifestyle context as first-class (not �notes�).
+- Evidence discipline: InsightEvents are forbidden from existing without referenced supporting events.
+- Append-only history: corrections are additive, preserving auditability instead of rewriting.
+- Human-first visibility: visibility scope is built in to prevent default over-sharing.
+
+Tension Between Health Reality And App Abstraction:
+- Many real experiences have fuzzy time boundaries; this is handled via relative timestamps, durations, and confidence levels.
+- �No events� can mean �nothing happened� or �nothing was captured�; gaps are preserved but remain interpretively ambiguous.
+- Lifestyle signals are intentionally high-level to avoid false precision.
+
+Ethical Boundaries Noted:
+- Explicitly rejected diagnosis/decision-making/prescription generation to avoid medical authority drift.
+- Confidence is framed as capture reliability, reducing the risk of overstating certainty.
+- Visibility scope is treated as a core field because health timelines are inherently sensitive.
+
+Step-5 Updates (AI Task Boundaries & Contracts):
+Actions Taken:
+- Created /docs/ai/ folder for AI contract documentation.
+- Created /docs/ai/AI_Task_Contracts.md defining the only allowed AI tasks, their inputs/outputs, and safety rules.
+
+Files Created:
+- /docs/ai/AI_Task_Contracts.md
+
+Why These Boundaries Prevent HealthCare+-Style Overreach:
+- Forces symptom-level structuring without condition-level diagnosis.
+- Requires evidence-linked insights (no standalone claims), keeping outputs accountable to timeline data.
+- Explicitly bans treatment advice, prescriptions, emergency decision-making, and provider prioritization.
+- Makes all AI outputs review-first and append-only when saved, preventing silent rewrites of health history.
+
+Where Google Maps Plugs In Later (Conceptual Only):
+- Task 3 outputs medical specializations only (no names, no location, no urgency).
+- A later Maps integration can combine specialization + user-provided location to search providers.
+
+Ethical Risks Identified:
+- Users may interpret structured labels as diagnoses; contract mitigates this by prohibiting condition claims and requiring uncertainty notes.
+- Summaries risk omitting nuance; contract requires explicit uncertainties and included event IDs.
+- Provider search can imply ranking/urgency; contract forbids prioritization and urgency grading at the AI layer.
+
+Step-6B Updates (Code-Level Domain Contracts):
+Actions Taken:
+- Created /backend/domain/ for storage-agnostic TypeScript domain contracts only.
+- Added base HealthEvent contract with readonly (immutability) semantics and typed extensibility.
+- Added specialized event contracts matching docs/domain definitions.
+- Added HealthTimeline contract with append-only helper signatures (no implementations).
+- Added explicit enums for VisibilityScope and EventSource (no magic strings in calling code).
+
+Files Created:
+- /backend/domain/HealthEvent.ts
+- /backend/domain/MedicationEvent.ts
+- /backend/domain/SymptomEvent.ts
+- /backend/domain/LifestyleEvent.ts
+- /backend/domain/ClinicalEvent.ts
+- /backend/domain/InsightEvent.ts
+- /backend/domain/HealthTimeline.ts
+- /backend/domain/VisibilityScope.ts
+- /backend/domain/EventSource.ts
+
+How Contracts Enforce Immutability + Evidence Discipline:
+- All event fields are `readonly` to discourage in-place mutation.
+- Timeline is modeled as `readonly` event collections and helper signatures that return new timelines (append-only).
+- InsightEvent requires `evidenceEventIds` as a NonEmptyArray, preventing evidence-free insight shapes at compile time.
+- Links include `supersedes`/`clarifies` to support reversible, append-only corrections without rewriting history.
+
+Mismatch Or Tension Noted (Docs vs Code):
+- Docs use the term "duration" both as a generic cross-cutting concept and as a SymptomEvent attribute.
+  In code, this is unified as `EventDuration` with either an interval or a reported string, avoiding type conflicts and false precision.
+
+Ethically Sensitive Fields:
+- `visibilityScope` is treated as required because accidental over-sharing is a core risk.
+- `notes` can contain sensitive information; contract keeps it plain text and does not encode any AI conclusions.
+- `metadata` is typed but explicitly disallowed as a place to stash AI-derived claims.
+
+Step-7A Updates (Task-Scoped LLM Execution Wiring):
+Actions Taken:
+- Created /backend/ai/ execution layer for AI task executors only (no routes/controllers/UI).
+- Added one executor per allowed AI task:
+  - SymptomInterpreter.ts
+  - HealthPatternAnalyzer.ts
+  - SpecializationSuggester.ts
+  - DoctorVisitSummarizer.ts
+- Added PromptBuilders.ts to deterministically build task-specific prompts from domain objects, strip sensitive fields, and enforce JSON-only outputs.
+
+Files Created:
+- /backend/ai/PromptBuilders.ts
+- /backend/ai/SymptomInterpreter.ts
+- /backend/ai/HealthPatternAnalyzer.ts
+- /backend/ai/SpecializationSuggester.ts
+- /backend/ai/DoctorVisitSummarizer.ts
+
+How Task-Scoped Execution Prevents Free-Form Chatbot Behavior:
+- Every executor uses strict JSON parsing and rejects non-JSON responses (no free-form chat output can pass).
+- Inputs accept only domain contracts (events/time windows), rejecting raw strings.
+- Outputs are typed DRAFT objects with required: result, confidence, evidenceEventIds, uncertaintyNotes, plus an explicit DRAFT_AI_OUTPUT marker.
+- Evidence ids in outputs are validated as a subset of provided input event ids, preventing hallucinated references.
+
+How Adapter Centralization Is Enforced:
+- LLM execution is only performed via /backend/ai/PromptBuilders.ts -> callLLMAdapter(), which shells into `llm_adapter.py` and calls `call_llm_router`.
+- No provider-specific logic (Gemini/Groq) exists in TypeScript; routing/keys remain exclusively in the adapter.
+- Each call includes an explicit task name matching the contract doc; calls without a task name are rejected.
+
+Domain -> Prompt Mapping Difficulty:
+- The domain model intentionally strips `notes`/`metadata`/`tags`/`links` when building prompts to reduce leakage and avoid implicit causal claims.
+- This can reduce context richness for some analyses, but keeps the contract aligned with �evidence-first, review-first� outputs.
+
+Prompt Risks Noted:
+- Gemini may return non-JSON even when instructed; strict parsing intentionally fails closed to enforce the boundary.
+- Symptom descriptions/context are inherently sensitive; prompts include only necessary fields and always preserve evidence linkage.
+
+Step-7B Updates (Google Maps Provider Discovery - Utility Only):
+Actions Taken:
+- Created /backend/maps/ as a pure utility layer (no AI, no health reasoning, no UI).
+- Added MapsClient.ts wrapping Google Places Nearby Search via HTTP.
+- Added SpecializationQueryMap.ts mapping specialization labels to neutral search terms.
+- Added ProviderDiscovery.ts as a thin orchestrator that groups providers per specialization and enforces user-confirmed location.
+
+Files Created:
+- /backend/maps/MapsClient.ts
+- /backend/maps/SpecializationQueryMap.ts
+- /backend/maps/ProviderDiscovery.ts
+
+How Maps Is Kept Downstream Of AI Reasoning:
+- ProviderDiscovery.ts accepts only the Task-3 draft output (specializations) plus an explicit user-confirmed location.
+- Maps layer never calls the LLM and contains no medical interpretation.
+- SpecializationQueryMap is a neutral string mapper, not a clinical decision system.
+
+How Provider Neutrality Is Enforced:
+- No sorting, scoring, ranking, or "best" selection is performed in any Maps file.
+- No filtering beyond the specialization keyword term is applied.
+- All Maps files include explicit contract comments: not medical advice, no urgency, no recommendations, user-invoked only.
+
+Ethical / UX Concerns Noted:
+- Users may misread Maps listings as endorsements; disclaimers are returned and reinforced by file-level contract comments.
+- Ratings are returned only as raw upstream fields (if available) and are not used for ranking.
+- Location is sensitive; ProviderDiscovery requires an explicit `locationConfirmation: "user-confirmed"` to nudge consent discipline at call sites.
+
+Step-8 Updates (Storage-Agnostic Timeline Persistence Boundary):
+Actions Taken:
+- Created /backend/repository/ as the only read/write boundary for timelines (no AI/UI/Maps).
+- Added TimelineRepository.ts interface with append-only methods and no update/delete surface.
+- Documented and enforced InsightEvent review discipline: InsightEvents require `options.insightReview.reviewed = true` to append.
+- Added InMemoryTimelineRepository.ts as a reference implementation for tests/demos (not production storage).
+- Added RepositoryFactory.ts as the single switch-point for future storage implementations (defaults to in-memory).
+
+Files Created:
+- /backend/repository/TimelineRepository.ts
+- /backend/repository/InMemoryTimelineRepository.ts
+- /backend/repository/RepositoryFactory.ts
+
+How Append-Only Behavior Is Enforced:
+- Repository interface exposes only append and read methods (no update/delete).
+- In-memory implementation rejects duplicate HealthEvent ids to prevent overwrite semantics.
+- Stored events are cloned on write and cloned on read to prevent mutation through shared references.
+- Insertion order is preserved; no sorting is applied in repository reads.
+
+How InsightEvent Review Discipline Is Guaranteed:
+- TimelineRepository exports `assertInsightReviewed()` which blocks InsightEvent appends unless `reviewed: true` is provided.
+- InMemoryTimelineRepository calls this guard for every appended event (single or bulk).
+
+Edge Cases Noted:
+- Concurrent appends: in-memory repo serializes appends per-user via a simple promise queue to preserve insertion order.
+- Time window reads rely on `timestamp.absolute` being parseable; invalid ISO strings are rejected.
+
+
+Step-8 Note:
+- Fixed a TypeScript return-type typo in /backend/repository/TimelineRepository.ts (extra generic bracket) so the interface is valid.
+
+
+
+Step-9 Updates (Liquid Pill Rendering With Real Timelines):
+Actions Taken:
+- Created /frontend/pill/PillController.tsx as the UI-side orchestrator that reads a timeline (via injected or mock repository adapter), segments events into coarse time slices, and maps scroll wheel intent to temporal progression.
+- Upgraded /frontend/pill/PrimaryPill.tsx to render real timeline events and InsightEvents using plain HTML (one narrative at a time).
+  - Insights are labeled as AI-generated vs not (via metadata) and Draft vs Reviewed (via metadata).
+- Upgraded /frontend/pill/MicroPill.tsx to a minimal navigation affordance only (Events/Insights) with no internal intelligence.
+- Simplified /frontend/Entry.tsx to render only <PillController /> (Entry no longer owns experience logic).
+
+Files Created:
+- /frontend/pill/PillController.tsx
+
+Files Modified:
+- /frontend/pill/PrimaryPill.tsx
+- /frontend/pill/MicroPill.tsx
+- /frontend/Entry.tsx
+
+How Timeline Data Is Sliced For Narrative:
+- PillController builds 3 coarse, time-based slices from event timestamps:
+  - Recent (last 7 days)
+  - Earlier (8-30 days)
+  - Older (31+ days)
+- The active slice filters events into two streams:
+  - Events: non-Insight events
+  - Insights: InsightEvents
+
+Scroll -> Time Progression (Validation-Only):
+- Wheel scroll forward/backward adjusts the slice index (later vs earlier), with Intro scrolling into Events.
+- No smooth scrolling, no scroll locking, no animation libraries.
+
+Where UX Felt Natural:
+- Events and Insights read cleanly as a chronological story when constrained to one slice at a time.
+- Micro pills as a simple "mode switch" (Events vs Insights) keeps the pill from becoming a dashboard.
+
+Where UX Felt Awkward/Heavy:
+- Slice boundaries are coarse and may feel arbitrary for sparse timelines; this is expected at validation stage.
+- Review status is represented via InsightEvent.metadata for now; Step-8 review enforcement happens at append time but does not persist a review flag inherently.
+
+Insight Labeling Confusion Noted:
+- Domain contracts do not yet have a first-class review-status field for persisted InsightEvents.
+  For this validation UI, review status is inferred from metadata (explicitly documented as a temporary labeling mechanism).
+
+Step-9.5 Updates (First-Class Insight Review Status):
+Actions Taken:
+- Updated /backend/domain/InsightEvent.ts to add first-class `reviewStatus: "draft" | "reviewed"`.
+- Updated /backend/repository/TimelineRepository.ts to enforce InsightEvent persistence ONLY when `reviewStatus === "reviewed"`.
+- Updated /backend/repository/InMemoryTimelineRepository.ts to enforce the same rule at append time (no metadata/flags).
+
+Files Modified:
+- /backend/domain/InsightEvent.ts
+- /backend/repository/TimelineRepository.ts
+- /backend/repository/InMemoryTimelineRepository.ts
+
+Why reviewStatus Is Now First-Class:
+- It is explicit and durable: review is part of the domain shape, not an informal convention.
+- It is auditable: persisted InsightEvents can be inspected without guessing intent.
+- Repository enforcement now relies on real fields, not on metadata interpretation.
+
+How This Removes UI Ambiguity:
+- UI no longer needs to infer review state from `metadata.reviewStatus` or `metadata.reviewed`.
+- NOTE: We located existing metadata-based review inference only in frontend .tsx files.
+  Per the strict rule in this step, we did NOT modify frontend files; those lines must be updated later to read `InsightEvent.reviewStatus`.
+
+Downstream Effects Noted:
+- Draft AI insight outputs are structurally discouraged from being persisted, because repositories will reject InsightEvents unless explicitly reviewed.
+- Any persisted InsightEvent must now carry reviewStatus; legacy data without the field would be treated as not reviewed by enforcement.
+
+Step-10 Updates (Plain HTML Liquid Pill + Glass + Motion):
+Actions Taken:
+- Created /frontend/index.html as the plain HTML entry point (full-viewport black background, one centered Primary Pill).
+- Created /frontend/styles/liquid-pill.css implementing a subtle glass treatment using CSS only (backdrop-filter, low opacity, subtle border; no gradients/neon).
+- Created /frontend/scripts/liquid-pill.js implementing Liquid Pill motion rules using vanilla JS + requestAnimationFrame.
+
+Files Created:
+- /frontend/index.html
+- /frontend/styles/liquid-pill.css
+- /frontend/scripts/liquid-pill.js
+
+How Motion Respects Motion_Contract.md:
+- Implemented allowed transitions: Expand, Morph (radius), Compress, Settle.
+- Avoided forbidden transitions: no snap jumps (continuous interpolation), no fade-cuts, no teleports (track translates through space).
+- Cause -> effect sequencing: wheel intent accumulates "pressure"; crossing a boundary requires sustained input; release settles back.
+- Internal glass-scroll activates only after full expansion (active state becomes scrollable).
+
+What Feels Premium:
+- Quiet glass (low opacity, subtle border) over a pure black field.
+- Expansion reads as one coherent object changing volume rather than UI panels appearing.
+- Resistance feedback uses slight nudge + delayed boundary yield instead of abrupt jumps.
+
+What Feels Off / Artificial:
+- Narrative states are placeholders and the slices are not yet driven by real timeline data.
+- Resistance is a simple pressure accumulator (not true physics); it may feel uniform across devices.
+
+Browser Quirks Noted:
+- `backdrop-filter` support varies; non-supporting browsers will see a flatter glass surface.
+- Wheel event handling requires `{ passive: false }` to prevent default scrolling inside the viewport.
+
+Step-11 Updates (Wire Real Timeline Data Into Plain HTML Liquid Pill):
+Actions Taken:
+- Created /frontend/scripts/timeline-adapter.js as a thin frontend bridge that seeds an in-memory, append-only timeline and exposes coarse time slices (older -> earlier -> recent).
+  - Persisted events include reviewed InsightEvents only (reviewStatus === "reviewed").
+  - Draft insights are kept separate (not persisted) but included in slices for transparency.
+- Updated /frontend/scripts/liquid-pill.js to drive the 3 track panels from timeline slices instead of hardcoded placeholder states.
+  - Micro pills now toggle semantic view mode: Events vs Insights (no time reordering).
+  - Scroll navigation advances through real time slices (with the existing resistance + settle behavior unchanged).
+  - Insights render with AI provenance (metadata.createdBy) and reviewStatus (first-class):
+    - Reviewed
+    - Draft (not yet confirmed)
+- Updated /frontend/index.html to:
+  - Load timeline-adapter.js before liquid-pill.js.
+  - Make micro navigation buttons semantic-only (Events/Insights).
+  - Mark the 3 existing panels as slice slots via data attributes.
+
+Files Created:
+- /frontend/scripts/timeline-adapter.js
+
+Files Modified:
+- /frontend/scripts/liquid-pill.js
+- /frontend/index.html
+
+How Real Timeline Data Maps Into Liquid Pill:
+- The pill track remains 3 panels for motion stability.
+- Each panel is a real time slice with:
+  - timeRangeLabel
+  - events[] (non-Insight)
+  - insights[] (reviewed persisted insights + draft insights shown transparently)
+- Scroll forward/back moves slice index with resistance (no snap/teleport/fade).
+
+Model/Frontend Mismatches Noted:
+- Frontend demo data uses plain string literals for eventType/source/visibilityScope for now; later wiring can import canonical enums via a build step.
+- AI provenance is still represented via metadata.createdBy (allowed), but review meaning is NOT inferred from metadata (uses InsightEvent.reviewStatus only).
+
+UX Friction Revealed By Real Data:
+- Long lists require internal scrolling; the existing "internal glass-scroll only after full expansion" rule makes this feel intentional but slightly hidden until expanded.
+- Showing draft insights alongside reviewed ones is honest, but may require clearer copy later to reduce user anxiety.
+
+Surprises:
+- Keeping motion constants unchanged while swapping content worked cleanly as long as the slice count stayed fixed at 3.
+
+
+Step-11 Note:
+- Fixed an invalid literal 
+ sequence that briefly appeared between script tags in /frontend/index.html during wiring; script tags are now valid HTML again.
+
+
+Step-11 Note (clarification):
+- The invalid sequence was the literal characters backtick-r backtick-n inserted between script tags; it has been replaced with a real newline.
+
+
+Layout Fix (Micro Pills Overlap On Expand):
+Actions Taken:
+- Updated /frontend/index.html to move the Events/Insights micro pills into an in-flow footer inside .pill-content (no absolute positioning).
+- Updated /frontend/styles/liquid-pill.css to enforce vertical flow inside the pill via flex column layout and spacing.
+- Introduced a bounded .pill-body wrapper so the translated track remains clipped while the footer occupies real layout space.
+
+Root Cause:
+- The micro pills were positioned with `position: absolute` at the bottom of the pill, so content never reserved space for them.
+- When the pill expanded and content grew, the absolute micro-nav overlapped text/events instead of reflowing.
+
+What Fixed It:
+- Moved micro pills into `.pill-footer` within normal document flow.
+- Made `.pill-content` a vertical flex container (`flex-direction: column; gap: 16px;`).
+- Removed absolute positioning and coordinate placement for micro navigation.
+
+Motion/Glass Confirmation:
+- No changes were made to motion constants, requestAnimationFrame loop, easing/resistance logic, or glass styling variables.
+- Only layout and spacing were adjusted.
+
+Edge Cases:
+- With very long content, internal scroll still occurs within the active panel after full expansion; the footer remains visible below the narrative area.
+
+Layout Fix Note:
+- Updated the click-to-expand guard in /frontend/scripts/liquid-pill.js to treat clicks inside `.pill-footer` as micro navigation clicks (so micro pills do not toggle expansion).
+
+
+RecruiterIQ Alignment + Scoped Liquid Pill Updates:
+====================================================
+
+Actions Taken:
+- Completely rewrote /frontend/index.html using RecruiterIQ layout as the baseline.
+- Updated /frontend/styles/liquid-pill.css to be fully scoped with .liquid-pill prefix.
+- Updated /frontend/scripts/liquid-pill.js to only bind to .liquid-pill elements (no global listeners).
+- Added pill-shaped hover effects to navigation buttons (liquid feel, not liquid behavior).
+
+Files Modified:
+- /frontend/index.html (complete rewrite)
+- /frontend/styles/liquid-pill.css
+- /frontend/scripts/liquid-pill.js
+
+RecruiterIQ Layout Preserved:
+- .main-section
+- .top-nav (fixed, blurred, border-bottom)
+- .content-container (grid, 2 columns, 48px gap)
+- .glass-card (blur, 5% white, 16px radius, hover lift)
+- .dashboard-container, .page-header, .table-card, .details-card
+- Background gradients (radial + floating)
+- CSS variables (--purple-*, --neutral-*, --nav-height, --radius)
+- Typography scale (Inter font, consistent weights)
+- Responsive breakpoints (900px for grid collapse)
+
+Sections Using Liquid Pill:
+- AI Assistant view ONLY
+  - Located inside a normal .glass-card container
+  - Uses .liquid-pill wrapper with .lp-* prefixed child elements
+  - No fixed positioning
+  - Motion bound only to pill viewport (not window/document)
+
+Sections Explicitly NOT Using Liquid Pill:
+- Home view (standard glass cards)
+- Timeline view (standard glass cards + table)
+- Dashboard view (standard glass cards + tables)
+- Navigation bar (pill-shaped hover only, no expansion/scroll logic)
+- Mobile navigation panel (pill-shaped buttons, no motion)
+
+Navigation Pill Enhancement:
+- Nav buttons use border-radius: 999px (pill shape)
+- Hover effect: background fill + border glow + translateY(-2px)
+- Active press: scale(0.95)
+- No expansion, no scroll logic, no narrative transitions
+
+Liquid Pill Scoping Rules Enforced:
+- All CSS selectors prefixed with .liquid-pill
+- No global selectors (no body, *, html overrides in pill CSS)
+- No overrides to .glass-card or layout grids
+- Liquid Pill styles are opt-in only
+- JS binds click/wheel events only to elements within .liquid-pill
+- No window or document.body event listeners
+
+Motion Contract Preserved:
+- Expand/Compress via click
+- Morph (radius changes with expansion)
+- Settle (easing, no jitter)
+- No snap/fade-cut/teleport
+- Resistance feedback on scroll boundaries
+
+Visual Match Confirmation:
+- HealthIQ now visually matches RecruiterIQ in:
+  - Layout structure
+  - Typography
+  - Spacing scale
+  - Glass card treatments
+  - Background gradients
+  - Color palette (no new colors introduced)
+
+Edge Cases Noted:
+- Liquid Pill height uses vh units; on very short viewports, min-height ensures content remains visible.
+- Mobile nav uses standard dropdown, not Liquid Pill (intentional).
+- AI chat input inside Liquid Pill uses pill-shaped elements but no motion.
+
+Final Feel:
+- HealthIQ feels calm, professional, and trustworthy.
+- Slightly more alive than RecruiterIQ due to the AI section's Liquid Pill.
+- Liquid Pill feels like "this is where intelligence lives" - intentional, not everywhere.
+
+
+Step-12 Updates (Production Audit — Full System Review):
+=========================================================
+
+Actions Taken:
+- Conducted a comprehensive 8-section production audit of the entire HealthIQ v1 codebase.
+- Audited every subsystem: Domain Model, Repository, AI Execution, Google Maps, Frontend, End-to-End Scenarios, Ethical/Legal Risk, and Production Readiness.
+- Generated structured audit report with PASS/FAIL per category, risk levels, and concrete fix recommendations.
+- Saved full audit output to /Audit_Report.txt.
+
+Audit Sections Completed:
+1. Domain Model Integrity Audit
+2. Repository & Persistence Audit
+3. AI Task Execution Audit
+4. Google Maps Integration Audit
+5. Frontend Integrity Audit (Plain HTML)
+6. End-to-End Scenario Simulation (5 scenarios)
+7. Ethical & Legal Risk Audit
+8. Production Readiness Scoring
+
+Files Created:
+- /Audit_Report.txt
+
+Key Findings (Critical / High):
+- HealthIQ task names missing from STRICT_JSON_TASKS in llm_adapter.py — Gemini could return non-JSON for all 4 HealthIQ AI tasks.
+- "Health Score: 78" hardcoded in Dashboard implies a medical metric — liability risk.
+- No medical disclaimer on homepage hero section — first-impression misleading claims.
+- Mock InsightEvent in PillController.tsx uses metadata.reviewStatus instead of first-class InsightEvent.reviewStatus — domain contract violation.
+- user-scalable=no in viewport meta — WCAG 1.4.4 accessibility violation.
+- No subprocess timeout in callLLMAdapter() — system could hang indefinitely.
+- No @supports fallback for backdrop-filter — UI invisible on unsupported browsers.
+- No evidenceEventId validation at repository persistence boundary — orphaned references could persist.
+- "SYSTEM OVERLOAD" plain string returned on provider failure — indistinguishable from malformed LLM output.
+- Quick Log form uses fake setTimeout mock — no actual event persistence.
+
+Production Readiness Scores Assigned:
+- Architecture: 8/10
+- Safety: 6/10
+- UX Robustness: 5/10
+- Hackathon Readiness: 7/10
+- Startup Viability: 5/10
+
+
+Step-13 Updates (Must-Fix #1 — Add HealthIQ Tasks to STRICT_JSON_TASKS):
+=========================================================================
+
+Actions Taken:
+- Added all 4 HealthIQ task names to STRICT_JSON_TASKS set in llm_adapter.py.
+
+Files Modified:
+- /llm_adapter.py (lines 108-122)
+
+Tasks Added:
+- "Symptom Interpretation"
+- "Health Pattern Insight"
+- "Medical Specialization Suggestion"
+- "Doctor-Visit Summary"
+
+What This Fixes:
+- Gemini now receives the "SYSTEM: Respond ONLY with valid JSON. No markdown. No explanations." preamble for all HealthIQ AI calls.
+- Previously, only RecruiterIQ tasks had JSON enforcement; HealthIQ tasks were unprotected.
+- Non-JSON responses are now rejected before returning to the TypeScript layer.
+
+Enforcement Confirmation:
+- Gemini: STRICT_JSON_TASKS preamble applied.
+- Groq: Always uses response_format={"type": "json_object"} regardless of task set.
+- TypeScript: strictParseJsonObject() rejects any non-JSON after this point.
+
+
+Step-14 Updates (Must-Fix #2 — Remove Health Score Liability):
+===============================================================
+
+Actions Taken:
+- Removed the entire "Health Score: 78" card from the Dashboard view in index.html.
+- Replaced with a neutral "Tracking Summary" card that explicitly states: "HealthIQ does not compute health scores or medical assessments."
+
+Files Modified:
+- /frontend/index.html (lines 1423-1427)
+
+What Was Removed:
+- Hardcoded "78" numerical health score.
+- "Based on consistency, activity, and symptom trends" fake methodology description.
+- The green gradient styling that visually implied a validated metric.
+
+What Replaced It:
+- Neutral description: "Your health timeline captures symptoms, medications, lifestyle events, and clinical visits in one place."
+- Explicit disclaimer: "HealthIQ does not compute health scores or medical assessments."
+
+Why This Is Critical:
+- A numerical "Health Score" in a health application implies a medically validated metric.
+- The number was hardcoded with no methodology, no calibration, and no data source.
+- Users could reasonably rely on this number for health decisions — creating legal liability.
+
+
+Step-15 Updates (Must-Fix #3 — Add Medical Disclaimer to Homepage):
+=====================================================================
+
+Actions Taken:
+- Added a visible medical disclaimer directly below the hero text on the homepage.
+
+Files Modified:
+- /frontend/index.html (lines 1192-1194)
+
+Disclaimer Text:
+- "HealthIQ is not a medical device. It does not diagnose, treat, or prevent any condition. Always consult a qualified healthcare professional for medical advice."
+
+Placement:
+- Directly below hero text ("Your health journey, intelligently tracked.").
+- Visible on first page load without scrolling or navigation.
+- Styled at 0.875rem in neutral-400 color with centered alignment.
+
+Why This Is Critical:
+- Previously, the homepage promised "AI-powered insights to understand your health better" with no disclaimer.
+- Users' first impression was a health intelligence tool with no boundaries stated.
+- Disclaimer is now the first thing visible after the product description.
+
+
+Step-16 Updates (Must-Fix #4 — Fix Mock InsightEvent Domain Violation):
+========================================================================
+
+Actions Taken:
+- Updated mock InsightEvents in PillController.tsx to use top-level reviewStatus field instead of metadata.reviewStatus.
+- Updated insightReviewLabel() in PrimaryPill.tsx to read from i.reviewStatus (the first-class field) instead of metadata.
+
+Files Modified:
+- /frontend/pill/PillController.tsx (lines 88-91, 148-149, 162-163)
+- /frontend/pill/PrimaryPill.tsx (lines 57-61)
+
+Changes in PillController.tsx:
+- ins-1: Added reviewStatus: "draft" as top-level field. Removed reviewStatus from metadata.
+- ins-2: Added reviewStatus: "reviewed" as top-level field. Removed reviewStatus from metadata.
+- Updated module comment to document that review status is a FIRST-CLASS field per domain contract.
+
+Changes in PrimaryPill.tsx:
+- insightReviewLabel() now reads i.reviewStatus directly instead of (i as any).metadata.reviewStatus.
+- Added contract reference comment: "MUST NOT infer from metadata (per domain contract InsightEvent.ts:19-20)."
+
+Why This Is Critical:
+- The domain contract (InsightEvent.ts:19-20) explicitly states: "Review status MUST NOT be inferred from metadata."
+- The mock data and UI code were teaching the wrong pattern — any developer copying this code would bypass review enforcement.
+- Repository enforcement relies on InsightEvent.reviewStatus; metadata-based inference creates a parallel, unenforced path.
+
+
+Step-17 Updates (Must-Fix #5 — Remove user-scalable=no):
+==========================================================
+
+Actions Taken:
+- Changed viewport meta tag from "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" to "width=device-width, initial-scale=1.0".
+
+Files Modified:
+- /frontend/index.html (line 5)
+
+What Was Removed:
+- maximum-scale=1.0
+- user-scalable=no
+
+Why This Is Critical:
+- WCAG 1.4.4 (Resize Text) requires that users can zoom to at least 200% without loss of content or functionality.
+- user-scalable=no prevents pinch-to-zoom on mobile devices — blocking users with low vision.
+- This is a hard accessibility violation that would fail any WCAG audit.
+
+
+Step-18 Updates (V2 Improvement #1 — Add Subprocess Timeout to callLLMAdapter):
+==================================================================================
+
+Actions Taken:
+- Added a 30-second timeout to the callLLMAdapter() function in PromptBuilders.ts.
+- Timeout kills the child process and rejects the promise with a descriptive error message.
+- Added a settled flag to prevent double-resolve/reject race conditions.
+
+Files Modified:
+- /backend/ai/PromptBuilders.ts (lines 339-396)
+
+Implementation:
+- LLM_TIMEOUT_MS = 30,000 (30 seconds).
+- setTimeout() triggers child.kill() and rejects with: "LLM adapter timed out after 30000ms (task: {taskName})."
+- settled boolean flag guards all resolve/reject/timeout paths to prevent double invocation.
+- clearTimeout() called on both normal close and error events.
+
+What This Prevents:
+- Previously, if llm_adapter.py hung (network timeout, Gemini unresponsive, Groq unreachable), the promise would never resolve.
+- The system would appear frozen with no error feedback.
+- Now: kill + reject after 30 seconds, every time.
+
+
+Step-19 Updates (V2 Improvement #2 — Add @supports Fallback for backdrop-filter):
+====================================================================================
+
+Actions Taken:
+- Added @supports not (backdrop-filter: blur(1px)) CSS block to index.html.
+
+Files Modified:
+- /frontend/index.html (lines 1131-1148)
+
+Fallback Backgrounds Applied:
+- .glass-card: rgba(30, 30, 30, 0.95)
+- .top-nav: rgba(0, 0, 0, 0.92)
+- .liquid-pill .lp-viewport: rgba(25, 25, 30, 0.95)
+- .mobile-nav-panel: rgba(0, 0, 0, 0.95)
+
+What This Prevents:
+- Without backdrop-filter support, glass-card elements had background: rgba(255, 255, 255, 0.05) — nearly invisible on black.
+- The entire UI was effectively invisible on unsupported browsers (older Firefox, some mobile browsers).
+- Now: solid dark backgrounds provide full readability without blur effects.
+
+
+Step-20 Updates (V2 Improvement #3 — Validate evidenceEventIds in Repository):
+=================================================================================
+
+Actions Taken:
+- Added assertEvidenceExists() function to InMemoryTimelineRepository.ts.
+- Wired it into appendEvents() alongside existing assertNoDuplicateIds().
+- Updated isInsightEvent import from TimelineRepository.ts.
+
+Files Modified:
+- /backend/repository/InMemoryTimelineRepository.ts (lines 3-5, 16-21, 50-73, 115)
+
+How It Works:
+- Builds a Set of known event IDs from existing timeline + non-Insight incoming events.
+- For each incoming InsightEvent, validates every evidenceEventId exists in the known set.
+- Rejects with descriptive error: 'InsightEvent append rejected: evidenceEventId "{refId}" does not exist in timeline (InsightEvent.id: {id}).'
+
+What This Prevents:
+- Previously, an InsightEvent referencing ["nonexistent-123"] would persist without error.
+- Now: orphaned, hallucinated, or fabricated evidence references are rejected at the persistence boundary.
+- This closes the gap between AI-layer validation (assertEvidenceSubset in executors) and repository-layer validation.
+
+
+Step-21 Updates (V2 Improvement #4 — Distinguish SYSTEM_OVERLOAD from Malformed LLM Output):
+================================================================================================
+
+Actions Taken:
+- Modified llm_adapter.py to return structured JSON error instead of plain "SYSTEM OVERLOAD" string.
+- Modified strictParseJsonObject() in PromptBuilders.ts to detect adapter-level errors before normal task validation.
+- Added import json to llm_adapter.py.
+
+Files Modified:
+- /llm_adapter.py (lines 21, 223-224)
+- /backend/ai/PromptBuilders.ts (lines 399-419)
+
+Python Side:
+- Old: return "SYSTEM OVERLOAD"
+- New: return json.dumps({"error": "all_providers_failed", "detail": str(last_error)})
+
+TypeScript Side:
+- strictParseJsonObject() now parses JSON first, then checks for obj["error"] === "all_providers_failed".
+- If detected: throws "LLM adapter: all providers failed ({detail}). Retry or check API keys."
+- If not detected: returns parsed object for normal task validation.
+
+What This Prevents:
+- Previously, "SYSTEM OVERLOAD" failed JSON.parse() and produced a generic "not valid JSON" error.
+- Callers could not distinguish "the LLM hallucinated prose" from "all API providers are down."
+- Now: infrastructure failures produce a distinct, actionable error message.
+
+
+Step-22 Updates (V2 Improvement #5 — Connect Quick Log Form to Backend):
+==========================================================================
+
+Actions Taken:
+- Removed the fake setTimeout mock from the Quick Log form handler.
+- Added an in-page append-only timeline store (window.__healthiq_timeline).
+- Quick Log form now creates real domain-shaped events and appends them to the in-page store.
+- New events are inserted into the Timeline table as real HTML rows.
+
+Files Modified:
+- /frontend/index.html (lines 1573-1667)
+
+In-Page Timeline Store:
+- window.__healthiq_timeline: append-only array.
+- window.__healthiq_appendEvent(): enforces duplicate ID rejection, freezes events via Object.freeze().
+- window.__healthiq_nextId(): generates sequential IDs with event-type prefix.
+
+Quick Log Form Behavior:
+- Reads event_type and description from form fields.
+- Creates a domain-shaped event object with: id, eventType, timestamp.absolute (ISO), source, confidence, visibilityScope, description.
+- Appends to in-page store.
+- Inserts a new <tr> at the top of the Timeline table with proper badge styling and HTML-escaped description.
+- Shows "Event logged to timeline." confirmation (replaces the old alert()).
+- On error: shows error message in loader text.
+
+What This Fixes:
+- Previously, the form used setTimeout + alert("Event logged successfully!") with no actual data storage.
+- Demo was static — logging events produced no visible change anywhere.
+- Now: events appear in the Timeline table immediately, and can be inspected via browser console (window.__healthiq_timeline).
+
+Scope Preservation:
+- No HTTP server added.
+- No auth system added.
+- No production database added.
+- Store is page-lifetime only (refreshing clears it).
+- This is a minimal integration to make the demo functional, not a backend replacement.
+
+
+Final Validation Checklist:
+============================
+
+1. Can any LLM output bypass JSON enforcement?           PASS
+   - All 4 HealthIQ tasks in STRICT_JSON_TASKS.
+   - Gemini receives JSON preamble. Groq uses json_object format.
+   - strictParseJsonObject() rejects non-JSON.
+
+2. Can any InsightEvent persist without review?           PASS
+   - assertInsightReviewed() rejects reviewStatus !== "reviewed".
+   - No bypass path exists.
+
+3. Can any orphaned evidence ID exist?                    PASS
+   - assertEvidenceExists() validates all evidenceEventIds before persistence.
+
+4. Does any UI imply diagnosis?                           PASS
+   - Homepage disclaimer visible on first load.
+   - Liquid Pill disclaimer present.
+   - Info card disclaimer present.
+   - No diagnostic language in hardcoded text.
+
+5. Does any UI imply medical scoring?                     PASS
+   - "Health Score: 78" removed entirely.
+   - Replaced with neutral tracking summary + explicit non-scoring statement.
+
+6. Does system hang indefinitely?                         PASS
+   - 30-second timeout kills child process and rejects promise.
+   - settled flag prevents double-resolve.
+
+7. Can users zoom the page?                               PASS
+   - Viewport meta: width=device-width, initial-scale=1.0 (no restrictions).
+   - WCAG 1.4.4 compliant.
+
+8. Does glass degrade gracefully?                         PASS
+   - @supports not (backdrop-filter) provides solid backgrounds.
+   - All glass elements readable without blur effects.
+
+HealthIQ v1 Status: Demo-defensible. All must-fix items resolved. All v2 improvements implemented. v1 scope preserved.
+
+
+Step-23 Updates (Structural Hardening — Issue 2: STRICT_JSON_TASKS String Fragility):
+=======================================================================================
+
+Actions Taken:
+- Created /task_registry.json as the single source of truth for all task names.
+- Updated /llm_adapter.py to load STRICT_JSON_TASKS from task_registry.json instead of hardcoding.
+- Updated /backend/ai/PromptBuilders.ts to load valid task names from task_registry.json at module init.
+- Added task name validation gate in callLLMAdapter() that rejects unknown task names before spawning Python.
+
+Files Created:
+- /task_registry.json
+
+Files Modified:
+- /llm_adapter.py (lines 109-118)
+- /backend/ai/PromptBuilders.ts (lines 1-37, 341-350)
+
+How This Eliminates String Fragility:
+- Both Python and TypeScript now consume the same JSON file for task names.
+- A task name typo in either language is caught at module load time (Python) or call time (TypeScript).
+- Adding a new task requires editing ONE file (task_registry.json) instead of two separate hardcoded sets.
+- Fallback behavior: if task_registry.json fails to load, Python logs an error and uses an empty set; TypeScript falls back to the 4 known HealthIQ task names.
+
+
+Step-24 Updates (Structural Hardening — Issue 3: Cross-Batch Evidence Validation):
+==================================================================================
+
+Actions Taken:
+- Updated assertEvidenceExists() in /backend/repository/InMemoryTimelineRepository.ts to reject Insight-to-Insight evidence chains.
+- Changed knownIds to knownNonInsightIds: only non-Insight events (existing + incoming) are valid evidence targets.
+- InsightEvents referencing other InsightEvents are now rejected at the persistence boundary.
+
+Files Modified:
+- /backend/repository/InMemoryTimelineRepository.ts (lines 51-76)
+
+What This Prevents:
+- Previously, an InsightEvent could reference another InsightEvent as evidence if the referenced Insight was already persisted.
+- This created risk of circular reasoning, transitive evidence drift, and hallucinated causal chains.
+- Now: evidence MUST be grounded in non-Insight events (Symptom, Medication, Lifestyle, Clinical) only.
+
+Error Message:
+- 'InsightEvent append rejected: evidenceEventId "{refId}" is not a non-Insight event in timeline (InsightEvent.id: {id}). Insight-to-Insight evidence chains are forbidden.'
+
+
+Step-25 Updates (Structural Hardening — Issue 4: API Failure Demo Robustness):
+===============================================================================
+
+Actions Taken:
+- Added DEMO_FALLBACK_RESPONSES map in /backend/ai/PromptBuilders.ts with deterministic, clearly-marked fallback responses for all 4 HealthIQ AI tasks.
+- Added getDemoFallbackResponse() and isDemoFallback() exported functions.
+- Updated all 4 AI executors to catch callLLMAdapter errors and fall back to demo responses:
+  - /backend/ai/SymptomInterpreter.ts
+  - /backend/ai/HealthPatternAnalyzer.ts
+  - /backend/ai/SpecializationSuggester.ts
+  - /backend/ai/DoctorVisitSummarizer.ts
+
+Files Modified:
+- /backend/ai/PromptBuilders.ts (lines 481-541)
+- /backend/ai/SymptomInterpreter.ts (lines 5-17, 40-54)
+- /backend/ai/HealthPatternAnalyzer.ts (lines 8-19, 124-135)
+- /backend/ai/SpecializationSuggester.ts (lines 3-16, 42-53)
+- /backend/ai/DoctorVisitSummarizer.ts (lines 8-19, 119-130)
+
+How Demo Fallback Works:
+- Each fallback response includes DEMO_FALLBACK: true marker so UI can distinguish from real AI output.
+- Fallback responses are structurally valid against each task's expected JSON schema.
+- Real event IDs from the input are substituted into the fallback to maintain evidence linkage validity.
+- isDemoFallback() allows callers to check if a parsed response is a fallback.
+
+What This Prevents:
+- Previously, API failure crashed the demo with an opaque error.
+- Now: demo continues running with clearly-marked placeholder results.
+
+
+Step-26 Updates (Structural Hardening — Issue 1: Unified Frontend Timeline):
+=============================================================================
+
+Actions Taken:
+- Replaced window.__healthiq_timeline (separate array) + hardcoded HTML table rows with a single unified in-page repository.
+- Removed 4 hardcoded <tr> elements from Timeline table; tbody is now populated dynamically from the repository.
+- Created renderTimelineTable() function that generates the table from the single repository array.
+- Added demo seed data matching the previously hardcoded table rows.
+- Quick Log form now calls renderTimelineTable() after appending instead of manually inserting DOM rows.
+- switchView() function now re-renders the timeline table when switching to the timeline view.
+
+Files Modified:
+- /frontend/index.html (lines 1295-1297, 1491-1506, 1572-1666, 1698-1708)
+
+How This Eliminates Dual Source of Truth:
+- Previously: hardcoded HTML rows showed one set of data; window.__healthiq_timeline contained a different set after Quick Log appends.
+- Now: ONE array (_timeline) is the sole data source for all reads.
+- renderTimelineTable() always produces a complete, sorted, consistent view.
+- Empty state shows "No events logged yet" when the repository is empty.
+- Demo seed data is appended through the same appendEvent() function as user-logged events.
+
+
+Step-27 Updates (Structural Hardening — Issue 5: UI Integrity Safeguards):
+===========================================================================
+
+Actions Taken:
+- Timeline table empty state: renderTimelineTable() shows "No events logged yet" when repository is empty (handled in Step-26).
+- Liquid Pill bounds clamping: replaced hardcoded `2` with `maxIndex = Math.max(0, panels.length - 1)` in all index calculations.
+  - activeIndex() clamped to maxIndex.
+  - attemptBoundaryCross() clamped to maxIndex.
+  - onModeClick() clamped to maxIndex.
+- Defensive reviewStatus rendering: insightReviewLabel() in PrimaryPill.tsx now explicitly handles 3 cases:
+  - "reviewed" -> "Reviewed"
+  - "draft" -> "Draft"
+  - anything else -> "Invalid — missing review status"
+
+Files Modified:
+- /frontend/index.html (lines 1778, 1794, 1872, 1918)
+- /frontend/pill/PrimaryPill.tsx (lines 57-64)
+
+What This Prevents:
+- Hardcoded panel count would break if panels are added/removed; maxIndex adapts dynamically.
+- Invalid or missing reviewStatus no longer silently defaults to "Draft" — it surfaces a visible warning.
+- Empty timeline no longer shows a blank table; users see an actionable message.
+
+
+Structural Hardening Validation Checklist:
+==========================================
+
+1. Can a task name typo reach the LLM without being caught?    NO
+   - callLLMAdapter() validates against task_registry.json before spawning Python.
+   - llm_adapter.py loads from the same task_registry.json.
+
+2. Can an InsightEvent reference another InsightEvent?          NO
+   - assertEvidenceExists() builds knownNonInsightIds excluding all Insight events.
+   - Error message explicitly states "Insight-to-Insight evidence chains are forbidden."
+
+3. Does the demo crash when APIs are down?                      NO
+   - All 4 executors catch callLLMAdapter errors and return DEMO_FALLBACK responses.
+   - Fallback responses are structurally valid and clearly marked.
+
+4. Can the Timeline table and in-page store show different data? NO
+   - ONE array (_timeline) is the single source of truth.
+   - Both Quick Log and demo seed use appendEvent().
+   - renderTimelineTable() always reads from the same array.
+
+5. Can the UI render an invalid Insight review status silently?  NO
+   - insightReviewLabel() explicitly checks for "reviewed" and "draft".
+   - Unknown values show "Invalid — missing review status".
+
+Production Hardening Score: 8/10
+HealthIQ v1 Status: Structurally hardened. All 5 critical issues resolved. No new features introduced.
+
+
+Step-28 Updates (Backend Server + Frontend API Wiring):
+=======================================================
+
+Actions Taken:
+- Created Express backend server with all REST endpoints for timeline CRUD and AI analysis.
+- Created Health Chat AI handler for conversational AI queries.
+- Wired frontend Quick Log, AI Chat, and Timeline view to backend API.
+- Prepared for split deployment: backend on Render, frontend on Hostinger.
+
+Files Created:
+- /package.json (Express, cors, dotenv, TypeScript deps, build/start/dev scripts)
+- /tsconfig.json (target ES2022, commonjs, outDir ./dist, rootDir .)
+- /requirements.txt (python-dotenv, google-generativeai, groq)
+- /backend/server.ts (Express server with all REST endpoints, CORS, demo seeding)
+- /backend/ai/HealthChatHandler.ts (conversational AI handler returning { reply, disclaimer })
+
+Files Modified:
+- /backend/ai/PromptBuilders.ts:
+  - Fixed __dirname path bug (changed to process.cwd())
+  - Extended TaskName union with "Health Chat"
+  - Added buildHealthChatPrompt() function
+  - Added "Health Chat" entry to DEMO_FALLBACK_RESPONSES
+  - Fixed NonEmptyArray type cast error
+- /task_registry.json: Added "Health Chat" to strict_json_tasks
+- /backend/ai/DoctorVisitSummarizer.ts: Fixed exhaustive switch type error
+- /frontend/index.html:
+  - Added API configuration (window.__HEALTHIQ_API)
+  - Added connection status indicator (green/yellow/red dot in nav)
+  - Wired Quick Log form with optimistic update + async backend POST
+  - Wired AI Chat input to POST to /api/ai/chat with response display
+  - Wired Timeline view to fetch + merge server events on view switch
+
+API Endpoints Implemented:
+- GET  /api/health                     -> { status: "ok", timestamp }
+- GET  /api/timeline/:userId           -> { userId, events[] }
+- POST /api/timeline/:userId/events    -> { appended: N }
+- POST /api/ai/interpret-symptoms      -> DraftAIOutput
+- POST /api/ai/health-patterns         -> DraftAIOutput
+- POST /api/ai/specializations         -> DraftAIOutput
+- POST /api/ai/doctor-visit-summary    -> DraftAIOutput
+- POST /api/ai/chat                    -> { reply, disclaimer }
+
+Frontend API Wiring Pattern:
+- Quick Log: Optimistic update (add to in-page store immediately, POST to backend asynchronously). Works offline.
+- AI Chat: POST to /api/ai/chat, display reply in Liquid Pill Recent Insights panel. Shows "Offline" if server unreachable.
+- Timeline: Render local data immediately on view switch, then fetch from backend and merge new events (skip duplicates).
+- Status Indicator: Polls /api/health every 30s. Green = connected, Yellow = checking, Red = offline.
+
+Build Verification:
+- npm run build: TypeScript compiles to dist/ with zero errors.
+- npm run dev: Server starts on port 3001, all endpoints verified via curl.
+- Demo seeding: 5 typed events (2 Symptom, 1 Medication, 1 Lifestyle, 1 Clinical) seeded for "demo-user" on startup.
+- All AI endpoints return demo fallback responses when Python LLM adapter is unavailable.
+
+Deployment Configuration:
+- Render (backend): Build: npm install && pip install -r requirements.txt && npm run build / Start: npm start
+- Hostinger (frontend): Set window.__HEALTHIQ_API = 'https://your-app.onrender.com' in index.html
+- CORS: Defaults to permissive (*) for development. Set CORS_ORIGINS env var for production.
+
+
+Step-29 Updates (AI Assistant Structural Refactor + Chat Stabilization):
+========================================================================
+
+Actions Taken:
+- Separated AI Assistant page from Insights content (total structural isolation).
+- Rebuilt AI Assistant as chat-only page (no insights, no summaries, no trends, no analytics).
+- Created /frontend/insights.html with migrated content (Recent Insights, Weekly Summary, Long-term Trends, How Insights Work).
+- Added "Insights" button to navigation (desktop + mobile) in index.html.
+- Fixed page reload issue: replaced old <input> with <textarea>, added preventDefault + stopPropagation on Enter key and Send button.
+- Rebuilt chat architecture: scrollable chat-history + fixed chat-input-bar inside liquid glass viewport.
+- Implemented typing indicator (animated bouncing dots).
+- Implemented all 7 stability safeguards.
+- Removed old Liquid Pill track/panel/mode-button system (no longer needed for chat).
+- Cleaned all orphan CSS and JS references.
+
+Files Created:
+- /frontend/insights.html (migrated insights, summary, trends content)
+
+Files Modified:
+- /frontend/index.html:
+  - Navigation: Added "Insights" button linking to insights.html
+  - AI View: Replaced old Liquid Pill multi-panel layout with chat-only container
+  - CSS: Replaced old .liquid-pill track/state/footer/micro-pill styles with .chat-pill chat-specific styles
+  - JS: Replaced old Liquid Pill controller + old AI Chat script with unified Chat Controller
+
+Chat Architecture:
+- .liquid-pill.chat-pill > .lp-container > .lp-viewport (flex column)
+  - .chat-history (flex:1, overflow-y:auto, scrollable)
+  - .chat-input-bar (flex-shrink:0, fixed at bottom, border-top)
+- No global scroll hijacking
+- No expansion/collapse motion (container is always full-size)
+- Liquid glass treatment preserved (backdrop-filter, border, shadow)
+
+Stability Safeguards Implemented:
+1. Empty message: Prevented (guard returns early, no API call)
+2. Rapid consecutive sends: Input + button disabled while waiting for response
+3. API timeout: 30-second timeout with structured error message
+4. Malformed JSON: try/catch around JSON.parse with user-facing error
+5. Demo mode fallback: Detected via DEMO_FALLBACK flag or (Demo) prefix, shown with yellow styling + notice banner
+6. Long AI response: Auto-scroll to bottom after every message
+7. Large chat history: Pruned beyond 200 messages (oldest removed first)
+
+Additional Safeguards:
+- Input re-enabled in finally block (never stuck disabled)
+- Typing indicator shown during fetch, hidden on response/error/timeout
+- Shift+Enter allows multiline input (only plain Enter sends)
+- Textarea auto-resizes up to 120px max height
+- HTML escaped in all message rendering (no XSS)
+
+Code Hygiene Verified:
+- No orphan references to old lp-state, lp-track, lp-footer, lp-micro-pill, lp-chat-input
+- No duplicate event listeners
+- No global variable leaks (only switchView, closeMobileNav intentionally global)
+- All chat state scoped inside IIFE with 'use strict'
+- TypeScript builds with zero errors

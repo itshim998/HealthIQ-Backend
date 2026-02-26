@@ -1,0 +1,238 @@
+/*
+  LIQUID PILL COMPONENT (SCOPED)
+  ==============================
+
+  This file contains ONLY the Liquid Pill component styles.
+  All styles are scoped to the .liquid-pill class to prevent
+  any global layout interference.
+
+  Usage:
+  - Liquid Pill is used ONLY in the AI/Chatbot section
+  - It lives inside a normal .glass-card container
+  - No fixed positioning, no global overrides
+
+  "This is where intelligence lives."
+*/
+
+/* ===== LIQUID PILL SCOPED VARIABLES ===== */
+.liquid-pill {
+  --lp-scale: 0.98;
+  --lp-radius: 34px;
+  --lp-h: 26vh;
+  --lp-track-index: 0;
+  --lp-track-nudge: 0px;
+
+  /* Glass styling for pill */
+  --lp-glass-bg: rgba(255, 255, 255, 0.06);
+  --lp-glass-border: rgba(255, 255, 255, 0.14);
+  --lp-glass-shadow: rgba(0, 0, 0, 0.55);
+  --lp-text: rgba(255, 255, 255, 0.92);
+  --lp-muted: rgba(255, 255, 255, 0.72);
+}
+
+/* ===== PILL CONTAINER ===== */
+.liquid-pill .lp-container {
+  width: 100%;
+  max-width: 100%;
+  transform: scale(var(--lp-scale));
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* ===== PILL VIEWPORT ===== */
+.liquid-pill .lp-viewport {
+  height: var(--lp-h);
+  min-height: 280px;
+  border-radius: var(--lp-radius);
+  background: var(--lp-glass-bg);
+  border: 1px solid var(--lp-glass-border);
+  box-shadow: 0 22px 60px var(--lp-glass-shadow);
+
+  /* Subtle glass: low blur, no gradients, no neon */
+  backdrop-filter: blur(6px) saturate(110%);
+  -webkit-backdrop-filter: blur(6px) saturate(110%);
+
+  /* Content scrolling stays inside the pill */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* ===== PILL CONTENT LAYOUT ===== */
+.liquid-pill .lp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  width: 100%;
+}
+
+/* ===== PILL BODY (Track Container) ===== */
+.liquid-pill .lp-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ===== NARRATIVE TRACK ===== */
+.liquid-pill .lp-track {
+  height: 300%;
+  width: 100%;
+  transform: translateY(calc(var(--lp-track-index) * -100% + var(--lp-track-nudge)));
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== TRACK STATES/SLICES ===== */
+.liquid-pill .lp-state {
+  height: calc(100% / 3);
+  padding: 28px 26px 18px;
+  overflow: hidden;
+}
+
+/* Internal scroll when fully expanded */
+.liquid-pill[data-expanded="true"][data-internal-scroll="true"] .lp-state[data-active="true"] {
+  overflow: auto;
+}
+
+/* ===== STATE CONTENT TYPOGRAPHY ===== */
+.liquid-pill .lp-state header h2 {
+  margin: 0 0 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  font-size: 1.25rem;
+  color: var(--lp-text);
+}
+
+.liquid-pill .lp-state p {
+  margin: 0 0 12px;
+  color: var(--lp-muted);
+  line-height: 1.55;
+}
+
+.liquid-pill .lp-state ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.liquid-pill .lp-state ul li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.liquid-pill .lp-state ul li:last-child {
+  border-bottom: none;
+}
+
+.liquid-pill .lp-state ul li strong {
+  color: var(--lp-text);
+}
+
+/* ===== PILL FOOTER (Micro Navigation) ===== */
+.liquid-pill .lp-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 0 26px 18px;
+}
+
+/* ===== MICRO PILLS (Navigation Buttons) ===== */
+.liquid-pill .lp-micro-pill {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+
+.liquid-pill .lp-micro-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.liquid-pill .lp-micro-pill:active {
+  transform: scale(0.97);
+}
+
+.liquid-pill .lp-micro-pill[aria-pressed="true"] {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* ===== AI CHAT INPUT ===== */
+.liquid-pill .lp-chat-input {
+  display: flex;
+  gap: 12px;
+  padding: 0 26px 18px;
+}
+
+.liquid-pill .lp-chat-input input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.liquid-pill .lp-chat-input input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+.liquid-pill .lp-chat-input input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.liquid-pill .lp-chat-input button {
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.liquid-pill .lp-chat-input button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+.liquid-pill .lp-chat-input button:active {
+  transform: scale(0.98);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 520px) {
+  .liquid-pill .lp-state {
+    padding: 22px 18px 16px;
+  }
+
+  .liquid-pill .lp-footer {
+    padding: 0 18px 14px;
+    flex-wrap: wrap;
+  }
+
+  .liquid-pill .lp-chat-input {
+    padding: 0 18px 14px;
+    flex-direction: column;
+  }
+
+  .liquid-pill .lp-chat-input button {
+    width: 100%;
+  }
+}

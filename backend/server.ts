@@ -74,8 +74,27 @@ app.options("*", cors());
 
 app.use(express.json({ limit: "1mb" }));
 
+// ---- Privacy headers (prevent response caching of health data) ----
+app.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
+
 // ---- Repository singleton ----
 const repo = getTimelineRepository();
+
+// ---- UserId validation helper (Privacy-critical) ----
+function validateUserId(userId: string | undefined): UserId | null {
+  if (!userId || typeof userId !== "string") return null;
+  const trimmed = userId.trim();
+  // Reject empty, 'demo-user', 'undefined', 'null', or suspiciously short IDs
+  if (!trimmed || trimmed.length < 8 || trimmed === "demo-user" || trimmed === "undefined" || trimmed === "null") {
+    return null;
+  }
+  return trimmed;
+}
 
 // ---- Async error wrapper ----
 function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
@@ -95,7 +114,11 @@ app.get("/api/health", (_req, res) => {
 // GET /api/timeline/:userId
 // ===============================
 app.get("/api/timeline/:userId", asyncHandler(async (req, res) => {
-  const userId: UserId = req.params.userId;
+  const userId = validateUserId(req.params.userId);
+  if (!userId) {
+    res.status(400).json({ error: "Valid userId required. 'demo-user' is no longer accepted." });
+    return;
+  }
   const snapshot = await repo.getTimeline(userId);
   res.json(snapshot);
 }));
@@ -104,7 +127,11 @@ app.get("/api/timeline/:userId", asyncHandler(async (req, res) => {
 // POST /api/timeline/:userId/events
 // ===============================
 app.post("/api/timeline/:userId/events", asyncHandler(async (req, res) => {
-  const userId: UserId = req.params.userId;
+  const userId = validateUserId(req.params.userId);
+  if (!userId) {
+    res.status(400).json({ error: "Valid userId required. 'demo-user' is no longer accepted." });
+    return;
+  }
   const body = req.body;
 
   let events: AnyHealthEvent[];
@@ -151,15 +178,20 @@ app.post("/api/ai/interpret-symptoms", asyncHandler(async (req, res) => {
   let recentLifestyle: LifestyleEvent[] | undefined;
 
   if (body.userId) {
-    const allSymptoms = await repo.getEventsByType(body.userId, HealthEventType.Symptom);
+    const validatedUid = validateUserId(body.userId);
+    if (!validatedUid) {
+      res.status(400).json({ error: "Valid userId required. 'demo-user' is no longer accepted." });
+      return;
+    }
+    const allSymptoms = await repo.getEventsByType(validatedUid, HealthEventType.Symptom);
     symptoms = allSymptoms as SymptomEvent[];
     if (symptoms.length === 0) {
       res.status(400).json({ error: "No symptom events found for this user." });
       return;
     }
-    const allMeds = await repo.getEventsByType(body.userId, HealthEventType.Medication);
+    const allMeds = await repo.getEventsByType(validatedUid, HealthEventType.Medication);
     recentMedications = allMeds as MedicationEvent[];
-    const allLifestyle = await repo.getEventsByType(body.userId, HealthEventType.Lifestyle);
+    const allLifestyle = await repo.getEventsByType(validatedUid, HealthEventType.Lifestyle);
     recentLifestyle = allLifestyle as LifestyleEvent[];
   } else if (Array.isArray(body.symptoms) && body.symptoms.length > 0) {
     symptoms = body.symptoms;
@@ -178,10 +210,11 @@ app.post("/api/ai/interpret-symptoms", asyncHandler(async (req, res) => {
 // POST /api/ai/health-patterns
 // ===============================
 app.post("/api/ai/health-patterns", asyncHandler(async (req, res) => {
-  const { userId, window: tw } = req.body;
+  const { userId: rawUserId, window: tw } = req.body;
+  const userId = validateUserId(rawUserId);
 
   if (!userId || !tw?.startAbsolute || !tw?.endAbsolute) {
-    res.status(400).json({ error: "Provide 'userId' and 'window' with startAbsolute/endAbsolute." });
+    res.status(400).json({ error: "Provide valid 'userId' and 'window' with startAbsolute/endAbsolute." });
     return;
   }
 
@@ -214,10 +247,11 @@ app.post("/api/ai/specializations", asyncHandler(async (req, res) => {
 // POST /api/ai/doctor-visit-summary
 // ===============================
 app.post("/api/ai/doctor-visit-summary", asyncHandler(async (req, res) => {
-  const { userId, window: tw } = req.body;
+  const { userId: rawUserId, window: tw } = req.body;
+  const userId = validateUserId(rawUserId);
 
   if (!userId || !tw?.startAbsolute || !tw?.endAbsolute) {
-    res.status(400).json({ error: "Provide 'userId' and 'window' with startAbsolute/endAbsolute." });
+    res.status(400).json({ error: "Provide valid 'userId' and 'window' with startAbsolute/endAbsolute." });
     return;
   }
 
@@ -235,14 +269,18 @@ app.post("/api/ai/doctor-visit-summary", asyncHandler(async (req, res) => {
 // POST /api/ai/chat
 // ===============================
 app.post("/api/ai/chat", asyncHandler(async (req, res) => {
-  const { userId, message } = req.body;
+  const { userId: rawUserId, message } = req.body;
 
   if (!message || typeof message !== "string" || !message.trim()) {
     res.status(400).json({ error: "Provide a non-empty 'message' string." });
     return;
   }
 
-  const uid: UserId = userId || "demo-user";
+  const uid = validateUserId(rawUserId);
+  if (!uid) {
+    res.status(400).json({ error: "Valid userId required. Each device must provide its unique identifier." });
+    return;
+  }
   const snapshot = await repo.getTimeline(uid);
   const recentEvents = snapshot.events.slice(-20);
 

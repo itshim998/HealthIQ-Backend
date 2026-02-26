@@ -101,9 +101,15 @@ bucket = TokenBucket(RPM)
 # ------------------------------
 # Cache helpers
 # ------------------------------
-def _cache_key(prompt: str, task: str, model: str):
+# PRIVACY NOTE: Cache key includes the full prompt content, which contains
+# user-specific timeline events. Since different users have different events
+# in their prompts, cache entries are naturally user-isolated.
+# The cache key is: sha256(task|model|prompt), so two users with different
+# timeline data will NEVER share a cache entry.
+# If user_id is provided, it is also included in the key for extra safety.
+def _cache_key(prompt: str, task: str, model: str, user_id: str = ""):
     h = hashlib.sha256()
-    h.update(f"{task}|{model}|{prompt}".encode())
+    h.update(f"{task}|{model}|{user_id}|{prompt}".encode())
     return h.hexdigest()
 
 # ------------------------------
@@ -177,14 +183,15 @@ def call_llm_router(
     task: str = "general",
     use_simulation: bool = False,
     prefer: Optional[str] = None,
-    model_override: Optional[str] = None
+    model_override: Optional[str] = None,
+    user_id: Optional[str] = None
 ) -> str:
 
     if use_simulation:
         return simulated_response(prompt, task)
 
     model = model_override or (GEMINI_MODEL if prefer != "groq" else GROQ_MODEL)
-    key = _cache_key(prompt, task, model)
+    key = _cache_key(prompt, task, model, user_id or "")
 
     # Cache
     try:

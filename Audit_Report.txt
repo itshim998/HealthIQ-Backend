@@ -1,0 +1,62 @@
+Must-Fix List (Before Demo)
+Top 5 Must-Fix Issues
+1. Add HealthIQ tasks to STRICT_JSON_TASKS in llm_adapter.py
+
+File: llm_adapter.py:108-116
+Issue: HealthIQ task names are not in the strict JSON enforcement set. Gemini can return non-JSON responses for all 4 HealthIQ tasks.
+Fix: Add "Symptom Interpretation", "Health Pattern Insight", "Medical Specialization Suggestion", "Doctor-Visit Summary" to the set.
+Risk if unfixed: Every Gemini call for HealthIQ may fail unpredictably.
+2. Remove or relabel the "Health Score: 78" from the Dashboard
+
+File: index.html:1425-1426
+Issue: A hardcoded numerical health score with a fake methodology description implies a medically validated metric. This is a liability risk in a health application.
+Fix: Remove the health score card entirely, or replace with explicit "demo placeholder — not medical data" text.
+Risk if unfixed: Legal exposure if a user treats this as a real health metric.
+3. Add a medical disclaimer to the homepage
+
+File: index.html:1187-1192 (hero section)
+Issue: First-impression content promises "AI-powered insights" with no medical disclaimer. A user may not navigate to the AI view where disclaimers exist.
+Fix: Add a visible disclaimer below the hero text: "HealthIQ is not a medical device. It does not diagnose, treat, or prevent any condition."
+Risk if unfixed: First-impression misleading claims.
+4. Fix mock InsightEvent to use first-class reviewStatus field
+
+File: frontend/pill/PillController.tsx:143-168
+Issue: Mock InsightEvents use metadata.reviewStatus instead of the top-level reviewStatus field, violating the domain contract. PrimaryPill.tsx:57-61 reads from metadata, teaching the wrong pattern.
+Fix: Add reviewStatus: "draft" and reviewStatus: "reviewed" as top-level properties on mock InsightEvents. Update insightReviewLabel() to read i.reviewStatus instead of i.metadata.reviewStatus.
+Risk if unfixed: Any new developer copying this pattern will bypass the review enforcement.
+5. Remove user-scalable=no from viewport meta
+
+File: index.html:5
+Issue: WCAG 1.4.4 violation. Prevents users with low vision from zooming in.
+Fix: Change to <meta name="viewport" content="width=device-width, initial-scale=1.0">.
+Risk if unfixed: Accessibility violation; excludable from accessibility-sensitive contexts.
+Top 5 Improvements (for v2, within scope)
+1. Add subprocess timeout to callLLMAdapter()
+
+File: backend/ai/PromptBuilders.ts:343-375
+Add a 30-second timeout that kills the child process and rejects the promise. Prevents infinite hangs.
+2. Add @supports fallback for backdrop-filter
+
+File: index.html CSS section
+Provide a solid semi-transparent background when backdrop-filter is not supported. E.g.:@supports not (backdrop-filter: blur(1px)) {
+  .glass-card { background: rgba(30, 30, 30, 0.95); }
+}
+
+3. Add evidence ID validation in the repository
+
+File: backend/repository/InMemoryTimelineRepository.ts
+When appending InsightEvents, validate that evidenceEventIds all exist in the user's timeline. Prevents orphaned evidence references.
+4. Distinguish "SYSTEM OVERLOAD" from malformed LLM output
+
+Files: llm_adapter.py:218, backend/ai/PromptBuilders.ts:378-385
+Return a structured error (e.g., {"error": "all_providers_failed"}) from the Python adapter instead of a plain string. Parse this in strictParseJsonObject() before attempting to validate task output.
+5. Connect Quick Log form to backend
+
+File: index.html:1580-1596
+Replace the setTimeout mock with an actual call to the repository (via a minimal HTTP server or in-page bridge). This transforms the demo from "static mockup" to "functional prototype."
+Audit Summary
+The HealthIQ v1 architecture is well-designed at the domain and contract level — the append-only discipline, evidence-linked insights, review enforcement, and AI safety boundaries are materially stronger than typical prototype-stage health applications. The separation between AI, Maps, Repository, and Frontend layers is clean and correctly enforced.
+
+The critical gaps are at the integration layer: (1) no HTTP server connects frontend to backend, (2) the llm_adapter.py doesn't enforce JSON for HealthIQ tasks, (3) the frontend shows hardcoded data that includes a fabricated "Health Score" creating liability risk, and (4) mock data in the React components violates the domain contract it's built on.
+
+The 5 must-fix items above are achievable changes that would bring the system from "impressive architecture document" to "defensible demo."
