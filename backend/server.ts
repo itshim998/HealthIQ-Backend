@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import { existsSync } from "fs";
 import { resolve as pathResolve } from "path";
@@ -46,6 +47,20 @@ import type { HSIScore } from "./analytics/HSIScorer";
 import { buildGraphFromEvents } from "./analytics/HealthGraphBuilder";
 import { evaluateAlerts, computeRiskLevel, generateBehavioralSuggestions } from "./analytics/AlertEngine";
 
+// v2 validation (Zod schemas + abuse detection)
+import {
+  AppendEventsRequestSchema,
+  ChatRequestSchema,
+  HealthPatternsRequestSchema,
+  SpecializationsRequestSchema,
+  DoctorVisitSummaryRequestSchema,
+  SymptomInterpretationRequestSchema,
+  AnyHealthEventSchema,
+  detectPromptInjection,
+  validateTimestampNotFuture,
+} from "./validation/schemas";
+import { ZodError } from "zod";
+
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
@@ -74,7 +89,7 @@ app.use(cors({
     console.warn(`[CORS] Blocked request from origin: ${requestOrigin}`);
     callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
   },
-  methods: ["GET", "POST", "PUT", "OPTIONS"],
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
   credentials: false,
 }));
@@ -83,6 +98,13 @@ app.use(cors({
 app.options("*", cors());
 
 app.use(express.json({ limit: "1mb" }));
+
+// ---- Security headers (helmet) ----
+app.use(helmet({
+  contentSecurityPolicy: false,  // CSP managed by frontend host
+  crossOriginEmbedderPolicy: false,
+  hsts: { maxAge: 31536000, includeSubDomains: true },
+}));
 
 // ---- Privacy headers (prevent response caching of health data) ----
 app.use((_req, res, next) => {
@@ -115,6 +137,11 @@ function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
   return (req: Request, res: Response, next: NextFunction) => {
     fn(req, res).catch(next);
   };
+}
+
+// ---- Zod error formatter ----
+function formatZodError(err: ZodError): string {
+  return err.errors.map(e => `${e.path.join(".")}: ${e.message}`).join("; ");
 }
 
 // ===============================
@@ -153,34 +180,22 @@ app.post("/api/timeline/:userId/events", eventCreationRateLimiter, asyncHandler(
     res.status(400).json({ error: "Valid userId required. 'demo-user' is no longer accepted." });
     return;
   }
-  const body = req.body;
 
-  let events: AnyHealthEvent[];
-  if (Array.isArray(body.events)) {
-    events = body.events;
-  } else if (body.event && typeof body.event === "object") {
-    events = [body.event];
-  } else {
-    res.status(400).json({ error: "Request body must contain 'events' array or 'event' object." });
+  // Zod validation
+  const parsed = AppendEventsRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
 
-  if (events.length === 0) {
-    res.status(400).json({ error: "No events provided." });
-    return;
-  }
+  const events: AnyHealthEvent[] = parsed.data.events
+    ? (parsed.data.events as AnyHealthEvent[])
+    : [parsed.data.event as AnyHealthEvent];
 
+  // Reject far-future timestamps
   for (const e of events) {
-    if (!e.id || typeof e.id !== "string") {
-      res.status(400).json({ error: "Each event must have a string 'id'." });
-      return;
-    }
-    if (!e.eventType || !Object.values(HealthEventType).includes(e.eventType as HealthEventType)) {
-      res.status(400).json({ error: `Invalid eventType: ${e.eventType}. Must be one of: ${Object.values(HealthEventType).join(", ")}` });
-      return;
-    }
-    if (!e.timestamp?.absolute) {
-      res.status(400).json({ error: `Event ${e.id} must have timestamp.absolute.` });
+    if (!validateTimestampNotFuture(e.timestamp.absolute)) {
+      res.status(400).json({ error: `Event ${e.id} has a timestamp too far in the future.` });
       return;
     }
   }
@@ -202,6 +217,17 @@ app.post("/api/analytics/compute", asyncHandler(async (req, res) => {
   if (!Array.isArray(events) || events.length === 0) {
     res.status(400).json({ error: "Provide a non-empty 'events' array from LocalStorage." });
     return;
+  }
+
+  // Validate each event with Zod (lightweight — skip on very large batches for perf)
+  if (events.length <= 500) {
+    for (let i = 0; i < events.length; i++) {
+      const result = AnyHealthEventSchema.safeParse(events[i]);
+      if (!result.success) {
+        res.status(400).json({ error: `Event[${i}]: ${formatZodError(result.error)}` });
+        return;
+      }
+    }
   }
 
   // 1. Compute Health Stability Index
@@ -249,9 +275,19 @@ app.post("/api/analytics/compute", asyncHandler(async (req, res) => {
 
 // ===============================
 // GET /api/audit — recent request log (diagnostics)
+// Restricted: only available in development or with admin key
 // ===============================
-app.get("/api/audit", (_req, res) => {
-  const limit = Math.min(parseInt(_req.query.limit as string) || 50, 200);
+app.get("/api/audit", (req, res) => {
+  const adminKey = process.env.AUDIT_ADMIN_KEY;
+  const isDev = process.env.NODE_ENV !== "production";
+  const providedKey = req.query.key as string;
+
+  if (!isDev && (!adminKey || providedKey !== adminKey)) {
+    res.status(403).json({ error: "Audit log access restricted in production." });
+    return;
+  }
+
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   res.json(getRecentAuditEntries(limit));
 });
 
@@ -259,7 +295,13 @@ app.get("/api/audit", (_req, res) => {
 // POST /api/ai/interpret-symptoms
 // ===============================
 app.post("/api/ai/interpret-symptoms", aiRateLimiter, asyncHandler(async (req, res) => {
-  const body = req.body;
+  const parsed = SymptomInterpretationRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: formatZodError(parsed.error) });
+    return;
+  }
+
+  const body = parsed.data;
   let symptoms: SymptomEvent[];
   let recentMedications: MedicationEvent[] | undefined;
   let recentLifestyle: LifestyleEvent[] | undefined;
@@ -280,13 +322,10 @@ app.post("/api/ai/interpret-symptoms", aiRateLimiter, asyncHandler(async (req, r
     recentMedications = allMeds as MedicationEvent[];
     const allLifestyle = await repo.getEventsByType(validatedUid, HealthEventType.Lifestyle);
     recentLifestyle = allLifestyle as LifestyleEvent[];
-  } else if (Array.isArray(body.symptoms) && body.symptoms.length > 0) {
-    symptoms = body.symptoms;
-    recentMedications = body.recentMedications;
-    recentLifestyle = body.recentLifestyle;
   } else {
-    res.status(400).json({ error: "Provide 'userId' or non-empty 'symptoms' array." });
-    return;
+    symptoms = body.symptoms as SymptomEvent[];
+    recentMedications = body.recentMedications as MedicationEvent[] | undefined;
+    recentLifestyle = body.recentLifestyle as LifestyleEvent[] | undefined;
   }
 
   const draft = await interpretSymptoms({ symptoms, recentMedications, recentLifestyle });
@@ -297,11 +336,16 @@ app.post("/api/ai/interpret-symptoms", aiRateLimiter, asyncHandler(async (req, r
 // POST /api/ai/health-patterns
 // ===============================
 app.post("/api/ai/health-patterns", aiRateLimiter, asyncHandler(async (req, res) => {
-  const { userId: rawUserId, window: tw } = req.body;
-  const userId = validateUserId(rawUserId);
+  const parsed = HealthPatternsRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: formatZodError(parsed.error) });
+    return;
+  }
 
-  if (!userId || !tw?.startAbsolute || !tw?.endAbsolute) {
-    res.status(400).json({ error: "Provide valid 'userId' and 'window' with startAbsolute/endAbsolute." });
+  const userId = validateUserId(parsed.data.userId);
+  const tw = parsed.data.window;
+  if (!userId) {
+    res.status(400).json({ error: "Valid userId required." });
     return;
   }
 
@@ -319,14 +363,13 @@ app.post("/api/ai/health-patterns", aiRateLimiter, asyncHandler(async (req, res)
 // POST /api/ai/specializations
 // ===============================
 app.post("/api/ai/specializations", aiRateLimiter, asyncHandler(async (req, res) => {
-  const { symptomLabels, insights } = req.body;
-
-  if (!Array.isArray(symptomLabels) || symptomLabels.length === 0) {
-    res.status(400).json({ error: "Provide non-empty 'symptomLabels' array." });
+  const parsed = SpecializationsRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
 
-  const draft = await suggestMedicalSpecializations({ symptomLabels, insights });
+  const draft = await suggestMedicalSpecializations(parsed.data as any);
   res.json(draft);
 }));
 
@@ -334,11 +377,16 @@ app.post("/api/ai/specializations", aiRateLimiter, asyncHandler(async (req, res)
 // POST /api/ai/doctor-visit-summary
 // ===============================
 app.post("/api/ai/doctor-visit-summary", aiRateLimiter, asyncHandler(async (req, res) => {
-  const { userId: rawUserId, window: tw } = req.body;
-  const userId = validateUserId(rawUserId);
+  const parsed = DoctorVisitSummaryRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: formatZodError(parsed.error) });
+    return;
+  }
 
-  if (!userId || !tw?.startAbsolute || !tw?.endAbsolute) {
-    res.status(400).json({ error: "Provide valid 'userId' and 'window' with startAbsolute/endAbsolute." });
+  const userId = validateUserId(parsed.data.userId);
+  const tw = parsed.data.window;
+  if (!userId) {
+    res.status(400).json({ error: "Valid userId required." });
     return;
   }
 
@@ -356,10 +404,17 @@ app.post("/api/ai/doctor-visit-summary", aiRateLimiter, asyncHandler(async (req,
 // POST /api/ai/chat
 // ===============================
 app.post("/api/ai/chat", aiRateLimiter, asyncHandler(async (req, res) => {
-  const { userId: rawUserId, message } = req.body;
+  const parsed = ChatRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: formatZodError(parsed.error) });
+    return;
+  }
 
-  if (!message || typeof message !== "string" || !message.trim()) {
-    res.status(400).json({ error: "Provide a non-empty 'message' string." });
+  const { userId: rawUserId, message } = parsed.data;
+
+  // Prompt injection detection
+  if (detectPromptInjection(message)) {
+    res.status(400).json({ error: "Message contains disallowed patterns." });
     return;
   }
 
@@ -379,10 +434,13 @@ app.post("/api/ai/chat", aiRateLimiter, asyncHandler(async (req, res) => {
   res.json(chatResponse);
 }));
 
-// ---- Global error handler ----
+// ---- Global error handler (sanitized — never leak internals to clients) ----
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error("[HealthIQ Server Error]", err.message);
-  res.status(500).json({ error: err.message || "Internal server error." });
+  // Never return raw error messages to clients — they may contain file paths or stack details
+  const isValidation = err.message?.includes("Append rejected") || err.message?.includes("evidenceEventId");
+  const safeMessage = isValidation ? err.message : "Internal server error.";
+  res.status(isValidation ? 400 : 500).json({ error: safeMessage });
 });
 
 // ---- Graceful shutdown ----

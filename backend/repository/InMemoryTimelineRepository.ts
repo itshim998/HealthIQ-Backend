@@ -81,6 +81,9 @@ export class InMemoryTimelineRepository implements TimelineRepository {
   // Serialize appends per-user to preserve insertion order under concurrent calls.
   private readonly userQueue = new Map<UserId, Promise<void>>();
 
+  // Memory safety: cap per-user events to prevent unbounded growth / OOM DoS.
+  static readonly MAX_EVENTS_PER_USER = 10_000;
+
   private enqueue<T>(userId: UserId, op: () => Promise<T>): Promise<T> {
     const prev = this.userQueue.get(userId) ?? Promise.resolve();
 
@@ -116,6 +119,14 @@ export class InMemoryTimelineRepository implements TimelineRepository {
 
       assertNoDuplicateIds(existing, events);
       assertEvidenceExists(existing, events);
+
+      // Memory cap enforcement
+      if (existing.length + events.length > InMemoryTimelineRepository.MAX_EVENTS_PER_USER) {
+        throw new Error(
+          `Append rejected: would exceed per-user limit of ${InMemoryTimelineRepository.MAX_EVENTS_PER_USER} events ` +
+          `(current: ${existing.length}, incoming: ${events.length}).`,
+        );
+      }
 
       // Append-only: preserve insertion order.
       const clonedIncoming = events.map((e) => cloneSnapshot(e));
