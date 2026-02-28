@@ -433,13 +433,6 @@ export async function callLLMAdapter(call: LLMAdapterCall): Promise<string> {
     );
   }
 
-  const pythonCode =
-    "import sys, json\n" +
-    "from llm_adapter import call_llm_router\n" +
-    "payload = json.load(sys.stdin)\n" +
-    "out = call_llm_router(**payload)\n" +
-    "sys.stdout.write(out if isinstance(out, str) else str(out))\n";
-
   const payload = {
     prompt: call.prompt,
     task: call.task,
@@ -449,15 +442,56 @@ export async function callLLMAdapter(call: LLMAdapterCall): Promise<string> {
 
   // IMPORTANT:
   // - This is the ONLY gateway to LLM execution.
-  // - Provider routing and key management live in `llm_adapter.py`.
+  // - Provider routing and key management live in the LLM service.
   // - This function refuses to run without an explicit task name.
-  // - 30-second timeout kills the child process and rejects the promise.
   const LLM_TIMEOUT_MS = 30_000;
+
+  // v2: Prefer HTTP gateway to persistent LLM service (eliminates process spawn overhead).
+  // Falls back to child process spawning for backward compatibility.
+  const llmServiceUrl = process.env.LLM_SERVICE_URL || "";
+
+  if (llmServiceUrl) {
+    // --- HTTP mode (v2) ---
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+
+    try {
+      const resp = await fetch(`${llmServiceUrl}/llm/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (!resp.ok) {
+        const errBody = await resp.text().catch(() => "");
+        throw new Error(`LLM service returned HTTP ${resp.status}: ${errBody}`);
+      }
+
+      const result = await resp.json() as { result: string };
+      return result.result;
+    } catch (err: any) {
+      clearTimeout(timeout);
+      if (err?.name === "AbortError") {
+        throw new Error(`LLM service timed out after ${LLM_TIMEOUT_MS}ms (task: ${call.task}).`);
+      }
+      throw err;
+    }
+  }
+
+  // --- Child process mode (v1 fallback) ---
+  const pythonCode =
+    "import sys, json\n" +
+    "from llm_adapter import call_llm_router\n" +
+    "payload = json.load(sys.stdin)\n" +
+    "out = call_llm_router(**payload)\n" +
+    "sys.stdout.write(out if isinstance(out, str) else str(out))\n";
 
   return await new Promise<string>((resolve, reject) => {
     let settled = false;
 
-    // Use python3 on Linux (Render) with python as fallback (Windows).
     const pythonBin = process.platform === "win32" ? "python" : "python3";
     const child = spawn(pythonBin, ["-c", pythonCode], {
       cwd: PROJECT_ROOT,
