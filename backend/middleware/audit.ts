@@ -28,7 +28,7 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
       method: req.method,
       path: req.path,
       ip: req.ip || req.socket.remoteAddress || "unknown",
-      userId: req.params.userId || undefined,
+      userId: req.params?.userId || undefined,
       statusCode: res.statusCode,
       durationMs: Date.now() - start,
     };
