@@ -4,24 +4,20 @@ import type { Request } from "express";
 // HealthIQ v2 — Rate Limiting Middleware
 //
 // Three tiers:
-// 1. General API: 100 req/min per device
-// 2. AI endpoints: 30 req/min per device
-// 3. Event creation: 50 req/hour per device
+// 1. General API: 100 req/min per client
+// 2. AI endpoints: 30 req/min per client
+// 3. Event creation: 50 req/hour per client
 //
-// Key extraction: uses auth payload deviceId, falls back to IP.
+// Key extraction: uses userId param or IP.
 
 function extractKey(req: Request): string {
-  // Prefer authenticated device ID for accurate per-user limiting
-  if (req.auth?.deviceId) return req.auth.deviceId;
-  // Fall back to userId param
   if (req.params.userId) return req.params.userId;
-  // Last resort: IP
   return req.ip || req.socket.remoteAddress || "unknown";
 }
 
 // General API rate limiter: 100 req/min
 export const generalRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -41,7 +37,7 @@ export const aiRateLimiter = rateLimit({
 
 // Event creation rate limiter: 50 req/hour
 export const eventCreationRateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 50,
   standardHeaders: true,
   legacyHeaders: false,

@@ -36,17 +36,15 @@ import { suggestMedicalSpecializations } from "./ai/SpecializationSuggester";
 import { summarizeDoctorVisit } from "./ai/DoctorVisitSummarizer";
 import { handleHealthChat } from "./ai/HealthChatHandler";
 
-// v2 middleware
-import { authMiddleware, handleTokenRequest, handleTokenRefresh, ensureDevice } from "./middleware/auth";
+// v2 middleware (no auth — LocalStorage-first, stateless server)
 import { generalRateLimiter, aiRateLimiter, eventCreationRateLimiter } from "./middleware/rateLimiter";
-import { auditMiddleware } from "./middleware/audit";
+import { auditMiddleware, getRecentAuditEntries } from "./middleware/audit";
 
-// v2 analytics
-import { computeHSI, saveHSISnapshot, getLatestHSI, getHSIHistory } from "./analytics/HSIScorer";
-import { processEventForGraph, getGraphSummary } from "./analytics/HealthGraphBuilder";
+// v2 analytics (stateless — pure functions, no DB persistence)
+import { computeHSI } from "./analytics/HSIScorer";
+import type { HSIScore } from "./analytics/HSIScorer";
+import { buildGraphFromEvents } from "./analytics/HealthGraphBuilder";
 import { evaluateAlerts, computeRiskLevel, generateBehavioralSuggestions } from "./analytics/AlertEngine";
-import type { UserAlert } from "./analytics/AlertEngine";
-import { getActiveAlerts, acknowledgeAlert, saveAlert } from "./analytics/AlertEngine";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -77,8 +75,8 @@ app.use(cors({
     callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
   },
   methods: ["GET", "POST", "PUT", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
+  allowedHeaders: ["Content-Type"],
+  credentials: false,
 }));
 
 // Explicit preflight handling for all routes
@@ -94,9 +92,8 @@ app.use((_req, res, next) => {
   next();
 });
 
-// ---- v2 middleware stack ----
+// ---- v2 middleware stack (no auth — LocalStorage-first) ----
 app.use(generalRateLimiter);
-app.use(authMiddleware);
 app.use(auditMiddleware);
 
 // ---- Repository singleton ----
@@ -120,54 +117,6 @@ function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
   };
 }
 
-// =========================================================================
-// v2 Analytics pipeline — runs after event append
-// =========================================================================
-async function runAnalyticsPipeline(userId: string, newEvents: readonly AnyHealthEvent[]): Promise<void> {
-  try {
-    // 1. Get full timeline for graph co-occurrence context
-    const snapshot = await repo.getTimeline(userId);
-
-    // 2. Build / update health graph with new events
-    for (const event of newEvents) {
-      await processEventForGraph(userId, event, snapshot.events);
-    }
-    const allEvents = snapshot.events;
-
-    // 3. Compute HSI
-    const hsi = computeHSI(allEvents);
-    await saveHSISnapshot(userId, hsi);
-
-    // 5. Get previous HSI for delta comparison
-    const history = await getHSIHistory(userId, 2);
-    const previousHSI = history.length >= 2 ? history[1] : null;
-
-    // 6. Get graph summary for co-occurrence check
-    const graphSummary = await getGraphSummary(userId, 10);
-
-    // 7. Evaluate alert rules
-    const alerts = evaluateAlerts({
-      userId,
-      currentHSI: hsi,
-      previousHSI,
-      events: allEvents,
-      graphSummary,
-    });
-
-    // 8. Persist new alerts
-    for (const alert of alerts) {
-      await saveAlert(alert);
-    }
-
-    if (alerts.length > 0) {
-      console.log(`[Analytics] ${alerts.length} alert(s) triggered for user ${userId.slice(0, 8)}...`);
-    }
-  } catch (err) {
-    // Analytics pipeline failures must never block event writes
-    console.error("[Analytics Pipeline Error]", (err as Error).message);
-  }
-}
-
 // ===============================
 // GET /api/health
 // ===============================
@@ -175,24 +124,12 @@ app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     version: "2.0.0",
+    architecture: "stateless-compute",
+    storage: "client-localstorage",
     timestamp: new Date().toISOString(),
     features: ["hsi", "health-graph", "alerts", "risk-stratification"],
   });
 });
-
-// ===============================
-// POST /api/auth/token  — v2 device registration
-// ===============================
-app.post("/api/auth/token", asyncHandler(async (req, res) => {
-  await handleTokenRequest(req, res);
-}));
-
-// ===============================
-// POST /api/auth/refresh — v2 token refresh
-// ===============================
-app.post("/api/auth/refresh", asyncHandler(async (req, res) => {
-  await handleTokenRefresh(req, res);
-}));
 
 // ===============================
 // GET /api/timeline/:userId
@@ -249,155 +186,46 @@ app.post("/api/timeline/:userId/events", eventCreationRateLimiter, asyncHandler(
   }
 
   await repo.appendEvents(userId, events);
-
-  // Fire analytics pipeline asynchronously (non-blocking)
-  runAnalyticsPipeline(userId, events).catch((err) =>
-    console.error("[Analytics] post-append pipeline error:", err),
-  );
-
   res.status(201).json({ appended: events.length });
 }));
 
-// ===============================
-// GET /api/hsi/:userId — current Health Stability Index
-// ===============================
-app.get("/api/hsi/:userId", asyncHandler(async (req, res) => {
-  const userId = validateUserId(req.params.userId);
-  if (!userId) {
-    res.status(400).json({ error: "Valid userId required." });
+// =========================================================================
+// POST /api/analytics/compute — Stateless v2 analytics
+//
+// The client sends events from LocalStorage; the server computes
+// HSI, graph, alerts, risk, and suggestions, then returns them.
+// No server-side persistence — pure compute service.
+// =========================================================================
+app.post("/api/analytics/compute", asyncHandler(async (req, res) => {
+  const { events, previousHSI } = req.body;
+
+  if (!Array.isArray(events) || events.length === 0) {
+    res.status(400).json({ error: "Provide a non-empty 'events' array from LocalStorage." });
     return;
   }
 
-  const latest = await getLatestHSI(userId);
-  if (!latest) {
-    // Compute on-demand if no snapshot exists yet
-    const snapshot = await repo.getTimeline(userId);
-    if (snapshot.events.length === 0) {
-      res.status(404).json({ error: "No health events found. Log events to compute your HSI." });
-      return;
-    }
-    const hsi = computeHSI(snapshot.events);
-    await saveHSISnapshot(userId, hsi);
-    res.json(hsi);
-    return;
-  }
+  // 1. Compute Health Stability Index
+  const hsi: HSIScore = computeHSI(events as AnyHealthEvent[]);
 
-  res.json(latest);
-}));
-
-// ===============================
-// GET /api/hsi/:userId/history — HSI trend over time
-// ===============================
-app.get("/api/hsi/:userId/history", asyncHandler(async (req, res) => {
-  const userId = validateUserId(req.params.userId);
-  if (!userId) {
-    res.status(400).json({ error: "Valid userId required." });
-    return;
-  }
-
-  const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
-  const history = await getHSIHistory(userId, limit);
-  res.json({ userId, history, count: history.length });
-}));
-
-// ===============================
-// GET /api/graph/:userId/summary — health concept graph summary
-// ===============================
-app.get("/api/graph/:userId/summary", asyncHandler(async (req, res) => {
-  const userId = validateUserId(req.params.userId);
-  if (!userId) {
-    res.status(400).json({ error: "Valid userId required." });
-    return;
-  }
-
+  // 2. Build health concept graph
   const topN = Math.min(parseInt(req.query.topN as string) || 15, 50);
-  const summary = await getGraphSummary(userId, topN);
-  res.json(summary);
-}));
+  const graphSummary = buildGraphFromEvents(events as AnyHealthEvent[], topN);
 
-// ===============================
-// GET /api/alerts/:userId — active alerts
-// ===============================
-app.get("/api/alerts/:userId", asyncHandler(async (req, res) => {
-  const userId = validateUserId(req.params.userId);
-  if (!userId) {
-    res.status(400).json({ error: "Valid userId required." });
-    return;
-  }
+  // 3. Evaluate alert rules
+  const alerts = evaluateAlerts({
+    currentHSI: hsi,
+    previousHSI: previousHSI || null,
+    events: events as AnyHealthEvent[],
+    graphSummary,
+  });
 
-  const alerts = await getActiveAlerts(userId);
-  res.json({ userId, alerts, count: alerts.length });
-}));
+  // 4. Risk level
+  const risk = computeRiskLevel(hsi, alerts);
 
-// ===============================
-// POST /api/alerts/:userId/:alertId/acknowledge
-// ===============================
-app.post("/api/alerts/:userId/:alertId/acknowledge", asyncHandler(async (req, res) => {
-  const userId = validateUserId(req.params.userId);
-  if (!userId) {
-    res.status(400).json({ error: "Valid userId required." });
-    return;
-  }
-
-  const { alertId } = req.params;
-  if (!alertId) {
-    res.status(400).json({ error: "Alert ID required." });
-    return;
-  }
-
-  const acknowledged = await acknowledgeAlert(userId, alertId);
-  if (!acknowledged) {
-    res.status(404).json({ error: "Alert not found or already acknowledged." });
-    return;
-  }
-
-  res.json({ acknowledged: true });
-}));
-
-// ===============================
-// GET /api/status/:userId — full health status dashboard
-// ===============================
-app.get("/api/status/:userId", asyncHandler(async (req, res) => {
-  const userId = validateUserId(req.params.userId);
-  if (!userId) {
-    res.status(400).json({ error: "Valid userId required." });
-    return;
-  }
-
-  // Gather all v2 analytics in parallel
-  const [latestHSI, activeAlerts, graphSummary, snapshot] = await Promise.all([
-    getLatestHSI(userId),
-    getActiveAlerts(userId),
-    getGraphSummary(userId, 10),
-    repo.getTimeline(userId),
-  ]);
-
-  // Compute HSI on-demand if missing
-  let hsi = latestHSI;
-  if (!hsi && snapshot.events.length > 0) {
-    hsi = computeHSI(snapshot.events);
-    await saveHSISnapshot(userId, hsi);
-  }
-
-  if (!hsi) {
-    res.json({
-      userId,
-      coldStart: true,
-      eventCount: snapshot.events.length,
-      message: "Not enough data to compute health status. Continue logging health events.",
-    });
-    return;
-  }
-
-  // Risk level
-  const risk = computeRiskLevel(hsi, activeAlerts);
-
-  // Behavioral suggestions
-  const suggestions = generateBehavioralSuggestions(hsi, activeAlerts, graphSummary);
+  // 5. Behavioral suggestions
+  const suggestions = generateBehavioralSuggestions(hsi, alerts, graphSummary);
 
   res.json({
-    userId,
-    coldStart: false,
     hsi: {
       score: Math.round(hsi.score * 10) / 10,
       dataConfidence: hsi.dataConfidence,
@@ -406,19 +234,26 @@ app.get("/api/status/:userId", asyncHandler(async (req, res) => {
       trajectoryDirection: Math.round(hsi.trajectoryDirection * 10) / 10,
       computedAt: hsi.computedAt,
     },
-    risk,
-    alerts: {
-      active: activeAlerts.slice(0, 10),
-      count: activeAlerts.length,
-    },
     graph: {
-      topConcepts: graphSummary.topConcepts.slice(0, 5),
-      strongestEdges: graphSummary.strongestEdges.slice(0, 5),
+      topConcepts: graphSummary.topConcepts.slice(0, 10),
+      strongestEdges: graphSummary.strongestEdges.slice(0, 10),
+      nodeCount: graphSummary.nodeCount,
+      edgeCount: graphSummary.edgeCount,
     },
+    alerts,
+    risk,
     suggestions,
-    eventCount: snapshot.events.length,
+    eventCount: events.length,
   });
 }));
+
+// ===============================
+// GET /api/audit — recent request log (diagnostics)
+// ===============================
+app.get("/api/audit", (_req, res) => {
+  const limit = Math.min(parseInt(_req.query.limit as string) || 50, 200);
+  res.json(getRecentAuditEntries(limit));
+});
 
 // ===============================
 // POST /api/ai/interpret-symptoms
@@ -551,24 +386,14 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // ---- Graceful shutdown ----
-async function shutdown(signal: string) {
-  console.log(`[HealthIQ] ${signal} received — shutting down gracefully`);
-  try {
-    const { closeDatabasePool } = await import("./database/connection");
-    await closeDatabasePool();
-  } catch { /* no DB pool to close */ }
-  process.exit(0);
-}
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => { console.log("[HealthIQ] SIGTERM — shutting down"); process.exit(0); });
+process.on("SIGINT", () => { console.log("[HealthIQ] SIGINT — shutting down"); process.exit(0); });
 
 // ---- Start server ----
 // No demo seed — timeline starts empty. Users add events via the frontend.
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`[HealthIQ v2] Server running on port ${PORT}`);
   console.log(`[HealthIQ v2] API health check: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`[HealthIQ v2] Architecture: Stateless compute — user data in client LocalStorage`);
   console.log(`[HealthIQ v2] Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`[HealthIQ v2] Database: ${process.env.DATABASE_URL ? "PostgreSQL" : "In-memory"}`);
-  console.log(`[HealthIQ v2] Auth: ${process.env.DISABLE_AUTH ? "DISABLED (dev mode)" : "JWT enabled"}`);
 });

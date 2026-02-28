@@ -4,7 +4,6 @@ import type { MedicationEvent } from "../domain/MedicationEvent";
 import type { LifestyleEvent } from "../domain/LifestyleEvent";
 import type { ClinicalEvent } from "../domain/ClinicalEvent";
 import { HealthEventType } from "../domain/HealthEvent";
-import { query } from "../database/connection";
 
 // =========================================================================
 // HealthIQ v2 — Concept Extractor
